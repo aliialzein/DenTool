@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+**/dist/
+.next/
+**/.next/
+
+# Generated
+generated/
+**/generated/
+
+# Test / coverage
+coverage/
+**/coverage/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+.idea/
+
+# Temporary
+.tmp/
+.temp/
+
+# Prisma
+**/.prisma/
+
+# Misc
+*.tsbuildinfo
+
+
+# AI/editor tooling
+.agents/
+.claude/
+.windsurf/
+**/.agents/
+**/.claude/
+**/.windsurf/
