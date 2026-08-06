@@ -45,11 +45,10 @@ jobs:
         run: npx prisma generate
 
       - name: Lint
-        run: npm run lint
+        run: npm run lint --workspace api
 
       - name: Build
         run: npm run build
 
       - name: Test
         run: npm run test
-  
