@@ -1,4 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { Test, TestingModule } from '@nestjs/testing';
+import { describe, expect, it, beforeEach } from '@jest/globals';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -14,9 +18,7 @@ describe('AppController', () => {
     appController = app.get<AppController>(AppController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
-    });
+  it('should return "Hello World!"', () => {
+    expect(appController.getHello()).toBe('Hello World!');
   });
 });

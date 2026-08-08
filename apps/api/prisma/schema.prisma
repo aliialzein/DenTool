@@ -1,14 +1,11 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
-}
-
-enum Role {
-  ADMIN
 }
 
 model User {
@@ -17,10 +14,10 @@ model User {
   passwordHash   String
   role           Role            @default(ADMIN)
   isActive       Boolean         @default(true)
-  sessions       Session[]
-  passwordResets PasswordReset[]
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+  passwordResets PasswordReset[]
+  sessions       Session[]
 
   @@map("users")
 }
@@ -35,6 +32,7 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
+  @@index([tokenHash])
   @@map("sessions")
 }
 
@@ -62,9 +60,9 @@ model Category {
   imagePublicId String?
   imageUrl      String?
   isActive      Boolean   @default(true)
-  products      Product[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  products      Product[]
 
   @@map("categories")
 }
@@ -81,10 +79,10 @@ model Product {
   specifications Json?
   useCases       Json?
   categoryId     String         @db.Uuid
-  category       Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  images         ProductImage[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+  images         ProductImage[]
+  category       Category       @relation(fields: [categoryId], references: [id])
 
   @@index([categoryId])
   @@index([isActive])
@@ -104,4 +102,8 @@ model ProductImage {
 
   @@index([productId])
   @@map("product_images")
+}
+
+enum Role {
+  ADMIN
 }
