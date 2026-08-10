@@ -7,6 +7,7 @@ import { SessionsRepository } from './repositories/sessions.repository';
 import { SessionGuard } from './guards/session.guard';
 import { RateLimitGuard } from './guards/rate-limit.guard';
 import { CsrfGuard } from './guards/csrf.guard';
+import { AdminGuard } from './guards/admin.guard';
 
 @Module({
   imports: [PrismaModule],
@@ -18,6 +19,8 @@ import { CsrfGuard } from './guards/csrf.guard';
     SessionGuard,
     RateLimitGuard,
     CsrfGuard,
+    AdminGuard,
   ],
+  exports: [SessionGuard, CsrfGuard, AdminGuard],
 })
 export class AuthModule {}
