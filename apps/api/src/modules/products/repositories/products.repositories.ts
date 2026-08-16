@@ -33,6 +33,13 @@ export class ProductsRepository {
   async findBySlug(slug: string): Promise<Product | null> {
     return this.prisma.product.findUnique({
       where: { slug },
+      include: {
+        images: {
+          orderBy: {
+            sortOrder: 'asc',
+          },
+        },
+      },
     });
   }
 

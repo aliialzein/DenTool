@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { Test, TestingModule } from '@nestjs/testing';
 import { describe, expect, it, beforeEach } from '@jest/globals';
 import { AppController } from './app.controller';
