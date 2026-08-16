@@ -1,5 +1,11 @@
 import { Transform } from 'class-transformer';
-import { IsOptional, IsString, IsUrl, MaxLength, MinLength } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsUrl,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class CreateCategoryDto {
   @Transform(({ value }: { value: unknown }) =>

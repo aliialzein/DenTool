@@ -21,6 +21,6 @@ import { AdminGuard } from './guards/admin.guard';
     CsrfGuard,
     AdminGuard,
   ],
-  exports: [SessionGuard, CsrfGuard, AdminGuard],
+  exports: [SessionGuard, CsrfGuard, AdminGuard, AuthService],
 })
 export class AuthModule {}
