@@ -30,13 +30,33 @@ export class ProductsService {
     });
 
     return {
-      items: result.items,
+      items: result.items.map((product) => ({
+        ...product,
+        price: Number(product.price),
+      })),
+
       pagination: {
         page: query.page,
         limit: query.limit,
         total: result.total,
         totalPages: Math.ceil(result.total / query.limit),
       },
+    };
+  }
+
+  async findById(id: string) {
+    const product = await this.productsRepository.findById(id);
+
+    if (!product || !product.isActive) {
+      throw new NotFoundException({
+        code: 'PRODUCT_NOT_FOUND',
+        message: 'Product not found.',
+      });
+    }
+
+    return {
+      ...product,
+      price: Number(product.price),
     };
   }
 
@@ -50,7 +70,10 @@ export class ProductsService {
       });
     }
 
-    return product;
+    return {
+      ...product,
+      price: Number(product.price),
+    };
   }
 
   async create(data: CreateProductDto) {

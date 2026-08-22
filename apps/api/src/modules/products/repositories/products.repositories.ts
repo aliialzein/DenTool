@@ -16,17 +16,48 @@ export interface FindManyProductsParams {
 }
 
 export interface FindManyProductsResult {
-  items: Product[];
+  items: ProductWithRelations[];
   total: number;
 }
+
+export type ProductWithRelations = Prisma.ProductGetPayload<{
+  include: {
+    category: {
+      select: {
+        id: true;
+        name: true;
+        slug: true;
+      };
+    };
+    images: {
+      orderBy: {
+        sortOrder: 'asc';
+      };
+    };
+  };
+}>;
 
 @Injectable()
 export class ProductsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findById(id: string): Promise<Product | null> {
+  async findById(id: string): Promise<ProductWithRelations | null> {
     return this.prisma.product.findUnique({
       where: { id },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        images: {
+          orderBy: {
+            sortOrder: 'asc',
+          },
+        },
+      },
     });
   }
 
@@ -34,6 +65,13 @@ export class ProductsRepository {
     return this.prisma.product.findUnique({
       where: { slug },
       include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
         images: {
           orderBy: {
             sortOrder: 'asc',
@@ -116,12 +154,26 @@ export class ProductsRepository {
       [sortBy]: sortOrder,
     };
 
-    const [items, total] = await this.prisma.$transaction([
+    const [items, total] = await Promise.all([
       this.prisma.product.findMany({
         where,
         orderBy,
         skip,
         take: limit,
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          images: {
+            orderBy: {
+              sortOrder: 'asc',
+            },
+          },
+        },
       }),
 
       this.prisma.product.count({

@@ -1,3 +1,7 @@
+'use client';
+
+import { useAppDispatch } from '@/lib/store/hooks';
+import { addItem } from '@/lib/store/cartSlice';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '../ui/Button';
@@ -7,25 +11,27 @@ export interface ProductCardData {
   name: string;
   slug: string;
   price: number;
+
   category?: {
+    id: string;
     name: string;
     slug: string;
   };
+
   image?: string;
   isAvailable: boolean;
 }
 
 interface ProductCardProps {
   product: ProductCardData;
-  onAddToCart?: (product: ProductCardData) => void;
 }
 
 export function ProductCard({
   product,
-  onAddToCart,
 }: ProductCardProps) {
+  const dispatch = useAppDispatch();
   return (
-    <article className="group overflow-hidden rounded-lg border border-gray-100 bg-white">
+    <article className="group overflow-hidden rounded-lg border border-gray-100 bg-white transition-shadow hover:shadow-sm">
       <Link href={`/products/${product.slug}`}>
         <div className="relative aspect-square overflow-hidden bg-gray-50">
           {product.image ? (
@@ -47,8 +53,8 @@ export function ProductCard({
       <div className="p-4">
         {product.category && (
           <Link
-            href={`/products?category=${product.category.slug}`}
-            className="text-xs font-medium text-blue-600"
+            href={`/products?categoryId=${product.category.id}`}
+            className="text-xs font-medium text-blue-600 hover:text-blue-700"
           >
             {product.category.name}
           </Link>
@@ -67,16 +73,27 @@ export function ProductCard({
         <div className="mt-3 flex items-center justify-between gap-3">
           <span
             className={`text-xs font-medium ${
-              product.isAvailable ? 'text-green-600' : 'text-gray-400'
+              product.isAvailable
+                ? 'text-green-600'
+                : 'text-gray-400'
             }`}
           >
-            {product.isAvailable ? 'Available' : 'Unavailable'}
+            {product.isAvailable
+              ? 'Available'
+              : 'Unavailable'}
           </span>
 
           <Button
+            type="button"
             size="sm"
             disabled={!product.isAvailable}
-            onClick={() => onAddToCart?.(product)}
+            onClick={() =>
+              dispatch(
+                addItem({
+                  productId: product.id,
+                }),
+              )
+            }
           >
             Add to cart
           </Button>

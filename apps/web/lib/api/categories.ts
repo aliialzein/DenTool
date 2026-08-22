@@ -8,7 +8,18 @@ if (!API_URL) {
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    throw new Error(`API request failed with status ${response.status}`);
+    const body = await response.text();
+
+    console.error('API request failed:', {
+      status: response.status,
+      statusText: response.statusText,
+      url: response.url,
+      body,
+    });
+
+    throw new Error(
+      `API request failed with status ${response.status}: ${body}`,
+    );
   }
 
   return response.json() as Promise<T>;
@@ -17,9 +28,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 export async function getCategories(): Promise<Category[]> {
   const response = await fetch(`${API_URL}/categories`, {
     method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    cache: 'no-store',
   });
 
   return handleResponse<Category[]>(response);
@@ -32,9 +41,7 @@ export async function getCategoryBySlug(
     `${API_URL}/categories/${encodeURIComponent(slug)}`,
     {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      cache: 'no-store',
     },
   );
 

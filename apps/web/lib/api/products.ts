@@ -18,11 +18,11 @@ function buildQueryString(params: ProductListParams = {}) {
   }
 
   if (params.categoryId) {
-    searchParams.set('category', params.categoryId);
+    searchParams.set('categoryId', params.categoryId);
   }
 
   if (params.isAvailable !== undefined) {
-    searchParams.set('availability', String(params.isAvailable));
+    searchParams.set('isAvailable', String(params.isAvailable));
   }
 
   if (params.minPrice !== undefined) {
@@ -56,7 +56,18 @@ function buildQueryString(params: ProductListParams = {}) {
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    throw new Error(`API request failed with status ${response.status}`);
+    const body = await response.text();
+
+    console.error('API request failed:', {
+      status: response.status,
+      statusText: response.statusText,
+      url: response.url,
+      body,
+    });
+
+    throw new Error(
+      `API request failed with status ${response.status}: ${body}`,
+    );
   }
 
   return response.json() as Promise<T>;
@@ -67,14 +78,28 @@ export async function getProducts(
 ): Promise<ProductsResponse> {
   const query = buildQueryString(params);
 
-  const response = await fetch(`${API_URL}/products${query}`, {
+  const url = `${API_URL}/products${query}`;
+
+  const response = await fetch(url, {
     method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    cache: 'no-store',
   });
 
   return handleResponse<ProductsResponse>(response);
+}
+
+export async function getProductById(
+  productId: string,
+): Promise<Product> {
+  const response = await fetch(
+    `${API_URL}/products/id/${encodeURIComponent(productId)}`,
+    {
+      method: 'GET',
+      cache: 'no-store',
+    },
+  );
+
+  return handleResponse<Product>(response);
 }
 
 export async function getProductBySlug(
@@ -84,9 +109,7 @@ export async function getProductBySlug(
     `${API_URL}/products/${encodeURIComponent(slug)}`,
     {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      cache: 'no-store',
     },
   );
 

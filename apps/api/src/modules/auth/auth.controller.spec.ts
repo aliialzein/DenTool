@@ -10,7 +10,7 @@ import { SESSION_COOKIE_NAME } from './constants/auth.constants';
 describe('AuthController', () => {
   let controller: AuthController;
 
-  const authServiceMock = {
+  const authServiceMock: any = {
     validateUserWithAttemptTracking: jest.fn(),
     createSession: jest.fn(),
     logout: jest.fn(),

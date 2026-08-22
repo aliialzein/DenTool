@@ -2,12 +2,10 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { useAppSelector } from '@/lib/store/hooks';
 
-interface HeaderProps {
-  cartItemCount?: number;
-}
 
-export function Header({ cartItemCount = 0 }: HeaderProps) {
+export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navigation = [
@@ -16,6 +14,10 @@ export function Header({ cartItemCount = 0 }: HeaderProps) {
     { label: 'About', href: '/about' },
     { label: 'Contact', href: '/contact' },
   ];
+
+  const cartItemCount = useAppSelector(
+    (state) => state.cart.items.length,
+  );
 
   return (
     <header className="border-b border-gray-100 bg-white">

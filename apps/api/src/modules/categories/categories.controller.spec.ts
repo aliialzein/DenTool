@@ -7,7 +7,7 @@ import { CategoriesService } from './categories.service';
 describe('CategoriesService', () => {
   let service: CategoriesService;
 
-  const repository = {
+  const repository: any = {
     createCategory: jest.fn(),
     findAllActive: jest.fn(),
     findById: jest.fn(),

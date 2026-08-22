@@ -7,7 +7,7 @@ interface Category {
 }
 
 export interface ProductFilterValues {
-  category?: string;
+  categoryId?: string;
   availability?: boolean;
   minPrice?: number;
   maxPrice?: number;
@@ -39,11 +39,11 @@ export function ProductFilters({
 
         <select
           id="category"
-          value={values.category ?? ''}
+          value={values.categoryId ?? ''}
           onChange={(event) =>
             onChange({
               ...values,
-              category: event.target.value || undefined,
+              categoryId: event.target.value || undefined,
             })
           }
           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
@@ -51,7 +51,7 @@ export function ProductFilters({
           <option value="">All categories</option>
 
           {categories.map((category) => (
-            <option key={category.id} value={category.slug}>
+            <option key={category.id} value={category.id}>
               {category.name}
             </option>
           ))}

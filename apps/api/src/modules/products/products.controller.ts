@@ -26,6 +26,11 @@ export class ProductsController {
     return this.productsService.findMany(query);
   }
 
+  @Get('id/:id')
+  async findById(@Param('id') id: string) {
+    return this.productsService.findById(id);
+  }
+
   @Get(':slug')
   async findBySlug(@Param('slug') slug: string) {
     return this.productsService.findBySlug(slug);

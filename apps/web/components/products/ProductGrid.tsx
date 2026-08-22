@@ -1,13 +1,14 @@
-import { ProductCard, type ProductCardData } from './ProductCard';
+import {
+  ProductCard,
+  type ProductCardData,
+} from './ProductCard';
 
 interface ProductGridProps {
   products: ProductCardData[];
-  onAddToCart?: (product: ProductCardData) => void;
 }
 
 export function ProductGrid({
   products,
-  onAddToCart,
 }: ProductGridProps) {
   if (products.length === 0) {
     return (
@@ -29,7 +30,6 @@ export function ProductGrid({
         <ProductCard
           key={product.id}
           product={product}
-          onAddToCart={onAddToCart}
         />
       ))}
     </div>
