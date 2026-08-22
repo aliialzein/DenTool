@@ -35,5 +35,8 @@ jobs:
       - name: Lint
         run: npm run lint --workspace web
 
-      - name: Build
+      - name: Build web
+        working-directory: apps/web
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3001/api
         run: npm run build
