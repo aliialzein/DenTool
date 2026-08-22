@@ -10,6 +10,7 @@ import { ProductsRepository } from './repositories/products.repositories';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { FindProductsDto } from './dto/find-products.dto';
+import { FindProductsByIdsDto } from './dto/find-products-by-ids.dto';
 import { ImageKitService } from '../../integrations/ImageKit/imagekit.service';
 import { ProductImagesRepository } from './repositories/product-images.repositories';
 import { CreateImageSignatureDto } from './dto/create-image-signature.dto';
@@ -42,6 +43,21 @@ export class ProductsService {
         totalPages: Math.ceil(result.total / query.limit),
       },
     };
+  }
+
+  async findByIds(query: FindProductsByIdsDto) {
+    const ids = [...new Set(query.ids)];
+
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const products = await this.productsRepository.findByIds(ids);
+
+    return products.map((product) => ({
+      ...product,
+      price: Number(product.price),
+    }));
   }
 
   async findById(id: string) {

@@ -115,3 +115,22 @@ export async function getProductBySlug(
 
   return handleResponse<Product>(response);
 }
+
+export async function getProductsByIds(
+  productIds: string[],
+): Promise<Product[]> {
+  if (productIds.length === 0) {
+    return [];
+  }
+
+  const ids = [...new Set(productIds)];
+  const response = await fetch(
+    `/api/cart/products?ids=${encodeURIComponent(ids.join(','))}`,
+    {
+      method: 'GET',
+      cache: 'no-store',
+    },
+  );
+
+  return handleResponse<Product[]>(response);
+}

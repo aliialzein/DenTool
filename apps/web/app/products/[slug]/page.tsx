@@ -15,21 +15,10 @@ export default async function ProductPage({
   params,
 }: ProductPageProps) {
   const { slug } = await params;
+  let product;
 
   try {
-    const product = await getProductBySlug(slug);
-
-    return (
-      <main className="min-h-screen bg-white">
-        <Header />
-
-        <section className="mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:px-8">
-          <ProductDetailClient product={product} />
-        </section>
-
-        <Footer />
-      </main>
-    );
+    product = await getProductBySlug(slug);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Unknown error';
@@ -40,4 +29,16 @@ export default async function ProductPage({
 
     throw error;
   }
+
+  return (
+    <main className="min-h-screen bg-white">
+      <Header />
+
+      <section className="mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:px-8">
+        <ProductDetailClient product={product} />
+      </section>
+
+      <Footer />
+    </main>
+  );
 }

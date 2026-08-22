@@ -18,7 +18,7 @@ import {
   updateQuantity,
 } from '@/lib/store/cartSlice';
 
-import { getProductById } from '@/lib/api/products';
+import { getProductsByIds } from '@/lib/api/products';
 
 import type { Product } from '@/types/product';
 import type { CartItemData } from '@/components/cart/CartItem';
@@ -31,6 +31,7 @@ export default function CartPage() {
   );
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [missingProductIds, setMissingProductIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +42,7 @@ export default function CartPage() {
       if (cartItems.length === 0) {
         if (!cancelled) {
           setProducts([]);
+          setMissingProductIds([]);
           setIsLoading(false);
           setError(null);
         }
@@ -52,21 +54,8 @@ export default function CartPage() {
         setIsLoading(true);
         setError(null);
 
-        const loadedProducts = await Promise.all(
-          cartItems.map(async (cartItem) => {
-            try {
-              return await getProductById(cartItem.productId);
-            } catch (error) {
-              if (
-                error instanceof Error &&
-                error.message.includes('status 404')
-              ) {
-                return null;
-              }
-
-              throw error;
-            }
-          }),
+        const loadedProducts = await getProductsByIds(
+          cartItems.map((cartItem) => cartItem.productId),
         );
 
         if (!cancelled) {
@@ -74,6 +63,14 @@ export default function CartPage() {
             loadedProducts.filter(
               (product): product is Product => product !== null,
             ),
+          );
+          setMissingProductIds(
+            cartItems
+              .map((cartItem) => cartItem.productId)
+              .filter(
+                (productId) =>
+                  !loadedProducts.some((product) => product?.id === productId),
+              ),
           );
         }
       } catch (err) {
@@ -209,6 +206,13 @@ export default function CartPage() {
         ) : (
           <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
             <div className="rounded-lg border border-gray-100 bg-white">
+              {missingProductIds.length > 0 && (
+                <div className="border-b border-amber-100 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+                  {missingProductIds.length === 1
+                    ? 'One item in your cart is no longer available and is not included in the total.'
+                    : `${missingProductIds.length} items in your cart are no longer available and are not included in the total.`}
+                </div>
+              )}
               <div className="px-5">
                 {cartItemsData.map((item) => (
                   <CartItem

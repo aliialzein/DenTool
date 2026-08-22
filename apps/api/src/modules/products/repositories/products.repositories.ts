@@ -61,6 +61,33 @@ export class ProductsRepository {
     });
   }
 
+  async findByIds(ids: string[]): Promise<ProductWithRelations[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    return this.prisma.product.findMany({
+      where: {
+        id: { in: ids },
+        isActive: true,
+      },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        images: {
+          orderBy: {
+            sortOrder: 'asc',
+          },
+        },
+      },
+    });
+  }
+
   async findBySlug(slug: string): Promise<Product | null> {
     return this.prisma.product.findUnique({
       where: { slug },

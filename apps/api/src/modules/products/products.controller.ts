@@ -13,6 +13,7 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { FindProductsDto } from './dto/find-products.dto';
+import { FindProductsByIdsDto } from './dto/find-products-by-ids.dto';
 import { CreateImageSignatureDto } from './dto/create-image-signature.dto';
 import { SessionGuard } from '../auth/guards/session.guard';
 import { AttachProductImageDto } from './dto/attach-product-image.dto';
@@ -24,6 +25,11 @@ export class ProductsController {
   @Get()
   async findMany(@Query() query: FindProductsDto) {
     return this.productsService.findMany(query);
+  }
+
+  @Get('by-ids')
+  async findByIds(@Query() query: FindProductsByIdsDto) {
+    return this.productsService.findByIds(query);
   }
 
   @Get('id/:id')

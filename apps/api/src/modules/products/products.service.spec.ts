@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
@@ -11,6 +12,7 @@ describe('ProductsService', () => {
 
   const repository: any = {
     findMany: jest.fn(),
+    findByIds: jest.fn(),
     findBySlug: jest.fn(),
     findById: jest.fn(),
   };
@@ -113,5 +115,35 @@ describe('ProductsService', () => {
     await expect(service.findBySlug('missing-slug')).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+
+  it('deduplicates IDs and maps prices for cart hydration', async () => {
+    repository.findByIds.mockResolvedValue([
+      {
+        id: 'product-1',
+        price: '12.50',
+        isActive: true,
+        isAvailable: true,
+        images: [],
+      },
+    ]);
+
+    await expect(
+      service.findByIds({ ids: ['product-1', 'product-1'] }),
+    ).resolves.toEqual([
+      {
+        id: 'product-1',
+        price: 12.5,
+        isActive: true,
+        isAvailable: true,
+        images: [],
+      },
+    ]);
+    expect(repository.findByIds).toHaveBeenCalledWith(['product-1']);
+  });
+
+  it('returns no products without querying the repository for empty IDs', async () => {
+    await expect(service.findByIds({ ids: [] })).resolves.toEqual([]);
+    expect(repository.findByIds).not.toHaveBeenCalled();
   });
 });

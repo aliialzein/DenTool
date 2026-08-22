@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 import { Button } from '@/components/ui/Button';
 import { addItem } from '@/lib/store/cartSlice';
@@ -17,18 +18,17 @@ export function ProductDetailClient({
   product,
 }: ProductDetailClientProps) {
   const dispatch = useAppDispatch();
-  const [selectedImage, setSelectedImage] = useState(
-    product.images[0]?.secureUrl ?? '',
-  );
-  const [quantity, setQuantity] = useState(1);
-
   const galleryImages = useMemo(
     () =>
       [...(product.images ?? [])].sort(
         (a, b) => a.sortOrder - b.sortOrder,
-      ),
+      ).slice(0, 5),
     [product.images],
   );
+  const [selectedImage, setSelectedImage] = useState(
+    galleryImages[0]?.secureUrl ?? '',
+  );
+  const [quantity, setQuantity] = useState(1);
 
   function handleAddToCart() {
     for (let index = 0; index < quantity; index += 1) {
@@ -42,6 +42,12 @@ export function ProductDetailClient({
   return (
     <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
       <div className="space-y-4">
+        <Link
+          href="/products"
+          className="inline-flex text-sm font-semibold text-sky-700 hover:text-sky-800"
+        >
+          ← Back to Products
+        </Link>
         <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
           {selectedImage ? (
             <Image
