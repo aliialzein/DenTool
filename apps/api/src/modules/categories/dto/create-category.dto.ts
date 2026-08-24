@@ -1,5 +1,6 @@
 import { Transform } from 'class-transformer';
 import {
+  IsBoolean,
   IsOptional,
   IsString,
   IsUrl,
@@ -33,4 +34,8 @@ export class CreateCategoryDto {
   @IsUrl({ require_tld: false })
   @MaxLength(2_048)
   imageUrl?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

@@ -37,6 +37,11 @@ export class FindProductsDto {
   isAvailable?: boolean;
 
   @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  isActive?: boolean;
+
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0)
