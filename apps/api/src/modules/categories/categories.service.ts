@@ -7,10 +7,17 @@ import { Prisma } from '../../../generated/prisma/client';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { CategoriesRepository } from './repositories/categories.repositories';
+import { ImageKitService } from '../../integrations/ImageKit/imagekit.service';
+import { CreateCategoryImageSignatureDto } from './dto/create-category-image-signature.dto';
+import { AttachCategoryImageDto } from './dto/attach-category-image.dto';
+import ImageKit from '@imagekit/nodejs';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly categoriesRepository: CategoriesRepository) {}
+  constructor(
+    private readonly categoriesRepository: CategoriesRepository,
+    private readonly imageKitService: ImageKitService,
+  ) {}
 
   async create(createCategoryDto: CreateCategoryDto) {
     const name = createCategoryDto.name.trim();
@@ -23,11 +30,16 @@ export class CategoriesService {
       createCategoryDto.description,
       createCategoryDto.imagePublicId,
       createCategoryDto.imageUrl,
+      createCategoryDto.isActive,
     );
   }
 
   async findAll() {
     return this.categoriesRepository.findAllActive();
+  }
+
+  async findAllAdmin() {
+    return this.categoriesRepository.findAll();
   }
 
   async findBySlug(slug: string) {
@@ -74,6 +86,66 @@ export class CategoriesService {
     }
 
     await this.categoriesRepository.deleteCategory(id);
+  }
+
+  async generateImageUploadSignature(
+    id: string,
+    _data: CreateCategoryImageSignatureDto,
+  ) {
+    void _data;
+    await this.getByIdOrThrow(id);
+
+    const authenticationParameters =
+      this.imageKitService.generateUploadAuthParams();
+
+    return {
+      ...authenticationParameters,
+      publicKey: this.imageKitService.getPublicKey(),
+      urlEndpoint: this.imageKitService.getUrlEndpoint(),
+      folder: `dentool/categories/${id}`,
+    };
+  }
+
+  async attachImage(id: string, data: AttachCategoryImageDto) {
+    await this.getByIdOrThrow(id);
+
+    let file: ImageKit.File;
+    try {
+      file = await this.imageKitService.getFile(data.fileId);
+    } catch {
+      throw new NotFoundException({
+        code: 'IMAGE_NOT_FOUND',
+        message: 'Image not found.',
+      });
+    }
+
+    const expectedFolder = `/dentool/categories/${id}/`;
+    if (
+      !file.fileId ||
+      !file.url ||
+      !file.filePath?.startsWith(expectedFolder)
+    ) {
+      throw new ConflictException({
+        code: 'INVALID_IMAGE_OWNERSHIP',
+        message: 'Image does not belong to this category.',
+      });
+    }
+
+    return this.categoriesRepository.updateCategory(id, {
+      imagePublicId: file.fileId,
+      imageUrl: file.url,
+    });
+  }
+
+  async removeImage(id: string): Promise<void> {
+    const category = await this.getByIdOrThrow(id);
+    if (category.imagePublicId) {
+      await this.imageKitService.deleteFile(category.imagePublicId);
+    }
+    await this.categoriesRepository.updateCategory(id, {
+      imagePublicId: null,
+      imageUrl: null,
+    });
   }
 
   private async getByIdOrThrow(id: string) {

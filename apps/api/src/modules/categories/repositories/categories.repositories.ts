@@ -12,6 +12,7 @@ export class CategoriesRepository {
     description?: string,
     imagePublicId?: string,
     imageUrl?: string,
+    isActive?: boolean,
   ): Promise<Category> {
     return this.prisma.category.create({
       data: {
@@ -20,6 +21,7 @@ export class CategoriesRepository {
         description,
         imagePublicId,
         imageUrl,
+        ...(isActive !== undefined && { isActive }),
       },
     });
   }
@@ -39,6 +41,12 @@ export class CategoriesRepository {
   async findAllActive(): Promise<Category[]> {
     return this.prisma.category.findMany({
       where: { isActive: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async findAll(): Promise<Category[]> {
+    return this.prisma.category.findMany({
       orderBy: { name: 'asc' },
     });
   }
