@@ -45,6 +45,23 @@ export class ProductsService {
     };
   }
 
+  async findManyAdmin(query: FindProductsDto) {
+    const result = await this.productsRepository.findMany(query);
+
+    return {
+      items: result.items.map((product) => ({
+        ...product,
+        price: Number(product.price),
+      })),
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total: result.total,
+        totalPages: Math.ceil(result.total / query.limit),
+      },
+    };
+  }
+
   async findByIds(query: FindProductsByIdsDto) {
     const ids = [...new Set(query.ids)];
 
@@ -74,6 +91,19 @@ export class ProductsService {
       ...product,
       price: Number(product.price),
     };
+  }
+
+  async findByIdAdmin(id: string) {
+    const product = await this.productsRepository.findById(id);
+
+    if (!product) {
+      throw new NotFoundException({
+        code: 'PRODUCT_NOT_FOUND',
+        message: 'Product not found.',
+      });
+    }
+
+    return { ...product, price: Number(product.price) };
   }
 
   async findBySlug(slug: string) {
@@ -319,5 +349,32 @@ export class ProductsService {
         },
       },
     });
+  }
+
+  async removeImage(productId: string, imageId: string): Promise<void> {
+    const product = await this.productsRepository.findById(productId);
+    if (!product) {
+      throw new NotFoundException({
+        code: 'PRODUCT_NOT_FOUND',
+        message: 'Product not found.',
+      });
+    }
+
+    const image = await this.productImagesRepository.findById(imageId);
+    if (!image) {
+      throw new NotFoundException({
+        code: 'IMAGE_NOT_FOUND',
+        message: 'Image not found.',
+      });
+    }
+    if (image.productId !== productId) {
+      throw new ConflictException({
+        code: 'INVALID_IMAGE_OWNERSHIP',
+        message: 'Image does not belong to this product.',
+      });
+    }
+
+    await this.productImagesRepository.delete(imageId);
+    await this.imageKitService.deleteFile(image.publicId);
   }
 }
