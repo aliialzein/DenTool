@@ -53,16 +53,7 @@ const cartSlice = createSlice({
         return;
       }
 
-      if (action.payload.quantity <= 0) {
-        state.items = state.items.filter(
-          (cartItem) =>
-            cartItem.productId !== action.payload.productId,
-        );
-
-        return;
-      }
-
-      item.quantity = action.payload.quantity;
+      item.quantity = Math.max(1, Math.floor(action.payload.quantity));
     },
 
     clearCart: (state) => {

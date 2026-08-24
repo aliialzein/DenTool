@@ -34,6 +34,10 @@ export default function CartPage() {
   const [missingProductIds, setMissingProductIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const productIdsKey = useMemo(
+    () => cartItems.map((item) => item.productId).sort().join(','),
+    [cartItems],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -93,7 +97,7 @@ export default function CartPage() {
     return () => {
       cancelled = true;
     };
-  }, [cartItems]);
+  }, [productIdsKey]);
 
   const cartItemsData = useMemo(() => {
     return cartItems.flatMap((cartItem) => {
