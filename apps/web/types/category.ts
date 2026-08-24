@@ -2,7 +2,8 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
-  description: string;
+  description?: string;
+  imagePublicId?: string;
   imageUrl?: string;
   isActive: boolean;
   createdAt: string;

@@ -1,5 +1,6 @@
 export interface ProductImage {
   id: string;
+  publicId?: string;
   secureUrl: string;
   sortOrder: number;
 }
@@ -17,6 +18,7 @@ export interface Product {
   slug: string;
   description: string;
   price: number;
+  stockQuantity: number;
   isAvailable: boolean;
   isActive: boolean;
   useCases: unknown;
