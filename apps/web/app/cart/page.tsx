@@ -19,13 +19,18 @@ import {
 } from '@/lib/store/cartSlice';
 
 import { getProductsByIds } from '@/lib/api/products';
+import {
+  createWhatsAppPurchaseRequest,
+  WhatsAppPurchaseError,
+} from '@/lib/api/whatsapp';
 
 import type { Product } from '@/types/product';
 import type { CartItemData } from '@/components/cart/CartItem';
 
 export default function CartPage() {
   const dispatch = useAppDispatch();
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [whatsappError, setWhatsappError] = useState<string | null>(null);
   const cartItems = useAppSelector(
     (state) => state.cart.items,
   );
@@ -156,11 +161,28 @@ export default function CartPage() {
     dispatch(removeItem(productId));
   }
 
-  function handleContinueToWhatsApp() {
-    // WhatsApp integration will be implemented next.
-    console.log('Continue to WhatsApp', {
-      items: cartItems,
-    });
+  async function handleContinueToWhatsApp() {
+    setWhatsappError(null);
+    setIsSubmitting(true);
+
+    try {
+      const items = cartItems.map((cartItem) => ({
+        productId: cartItem.productId,
+        quantity: cartItem.quantity,
+      }));
+
+      const { whatsappUrl } = await createWhatsAppPurchaseRequest(items);
+
+      window.location.href = whatsappUrl;
+    } catch (err) {
+      if (err instanceof WhatsAppPurchaseError) {
+        setWhatsappError(err.message);
+      } else {
+        setWhatsappError('Something went wrong. Please try again.');
+      }
+
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -231,13 +253,18 @@ export default function CartPage() {
               </div>
             </div>
 
-            <CartSummary
-              subtotal={subtotal}
-              itemCount={itemCount}
-              onContinueToWhatsApp={
-                handleContinueToWhatsApp
-              }
-            />
+            {whatsappError && (
+            <div className="mb-4 rounded-lg border border-red-100 bg-red-50 p-4 text-sm text-red-600">
+              {whatsappError}
+            </div>
+          )}
+
+          <CartSummary
+            subtotal={subtotal}
+            itemCount={itemCount}
+            onContinueToWhatsApp={handleContinueToWhatsApp}
+            isSubmitting={isSubmitting}
+          />
           </div>
         )}
       </section>
