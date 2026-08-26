@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { ProductsModule } from './modules/products/products.module';
 import { ImageKitModule } from './integrations/ImageKit/imagekit.module';
+import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ImageKitModule } from './integrations/ImageKit/imagekit.module';
     CategoriesModule,
     ProductsModule,
     ImageKitModule,
+    WhatsAppModule,
   ],
   controllers: [AppController],
   providers: [AppService],
