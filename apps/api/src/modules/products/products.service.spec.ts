@@ -162,9 +162,9 @@ describe('ProductsService', () => {
 
     expect(imageKitService.deleteFile).toHaveBeenCalledWith('imagekit-id');
     expect(productImagesRepository.delete).toHaveBeenCalledWith('image-1');
-    expect(productImagesRepository.delete.mock.invocationCallOrder[0]).toBeLessThan(
-      imageKitService.deleteFile.mock.invocationCallOrder[0],
-    );
+    expect(
+      productImagesRepository.delete.mock.invocationCallOrder[0],
+    ).toBeLessThan(imageKitService.deleteFile.mock.invocationCallOrder[0]);
   });
 
   it('rejects an image owned by another product', async () => {

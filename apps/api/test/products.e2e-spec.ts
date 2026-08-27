@@ -4,6 +4,15 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 
+interface ProductResponse {
+  id: string;
+  slug: string;
+}
+
+interface ProductsResponse {
+  items: ProductResponse[];
+}
+
 describe('Products (e2e)', () => {
   let app: INestApplication<App>;
 
@@ -39,8 +48,10 @@ describe('Products (e2e)', () => {
         .get('/api/products')
         .expect(200);
 
-      expect(res.body).toHaveProperty('items');
-      expect(Array.isArray(res.body.items)).toBe(true);
+      const body = res.body as ProductsResponse;
+
+      expect(body).toHaveProperty('items');
+      expect(Array.isArray(body.items)).toBe(true);
     });
 
     it('applies default pagination (page=1, limit=20) when none given', async () => {
@@ -48,10 +59,12 @@ describe('Products (e2e)', () => {
         .get('/api/products')
         .expect(200);
 
+      const body = res.body as ProductsResponse;
+
       // Whatever pagination fields your service returns, page/limit inputs
       // are defaulted by the DTO — this just confirms the request succeeds
       // and doesn't 400 for missing page/limit.
-      expect(res.body.items.length).toBeLessThanOrEqual(20);
+      expect(body.items.length).toBeLessThanOrEqual(20);
     });
 
     it('rejects an unknown query param (forbidNonWhitelisted)', async () => {
@@ -97,9 +110,7 @@ describe('Products (e2e)', () => {
 
     it('accepts a valid combination of filters', async () => {
       await request(app.getHttpServer())
-        .get(
-          '/api/products?sortBy=price&sortOrder=asc&page=1&limit=5',
-        )
+        .get('/api/products?sortBy=price&sortOrder=asc&page=1&limit=5')
         .expect(200);
     });
   });
@@ -146,14 +157,19 @@ describe('Products (e2e)', () => {
       const res = await request(app.getHttpServer()).get(
         '/api/products?limit=1',
       );
-      const first = res.body?.items?.[0];
+
+      const body = res.body as ProductsResponse;
+      const first = body.items[0];
+
       sampleProductId = first?.id;
       sampleProductSlug = first?.slug;
     });
 
     it('GET /api/products/id/:id returns the product for a real id', async () => {
       if (!sampleProductId) {
-        console.warn('Skipped: no products exist in the dev DB to test against.');
+        console.warn(
+          'Skipped: no products exist in the dev DB to test against.',
+        );
         return;
       }
 
@@ -166,7 +182,9 @@ describe('Products (e2e)', () => {
 
     it('GET /api/products/:slug returns the product for a real slug', async () => {
       if (!sampleProductSlug) {
-        console.warn('Skipped: no products exist in the dev DB to test against.');
+        console.warn(
+          'Skipped: no products exist in the dev DB to test against.',
+        );
         return;
       }
 
@@ -180,9 +198,7 @@ describe('Products (e2e)', () => {
 
   describe('admin routes reject unauthenticated requests', () => {
     it('GET /api/products/admin returns 401/403 without a session', async () => {
-      const res = await request(app.getHttpServer()).get(
-        '/api/products/admin',
-      );
+      const res = await request(app.getHttpServer()).get('/api/products/admin');
       expect([401, 403]).toContain(res.status);
     });
 

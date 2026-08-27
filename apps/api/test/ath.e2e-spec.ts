@@ -5,6 +5,20 @@ import type { App } from 'supertest/types';
 import cookieParser from 'cookie-parser';
 import { AppModule } from '../src/app.module';
 
+interface AuthUserResponse {
+  id: string;
+  email: string;
+  role: string;
+}
+
+interface LoginResponse extends AuthUserResponse {
+  csrfToken: string;
+}
+
+interface ErrorResponse {
+  message: string | string[];
+}
+
 describe('Auth (e2e)', () => {
   let app: INestApplication<App>;
 
@@ -53,15 +67,25 @@ describe('Auth (e2e)', () => {
    */
   async function loginAsAdmin() {
     const agent = request.agent(app.getHttpServer());
+
     const res = await agent
       .post('/api/auth/login')
-      .send({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD })
+      .send({
+        email: ADMIN_EMAIL,
+        password: ADMIN_PASSWORD,
+      })
       .expect(200);
+
+    const body = res.body as LoginResponse;
 
     return {
       agent,
-      csrfToken: res.body.csrfToken as string,
-      user: res.body as { id: string; email: string; role: string },
+      csrfToken: body.csrfToken,
+      user: {
+        id: body.id,
+        email: body.email,
+        role: body.role,
+      },
     };
   }
 
@@ -96,7 +120,9 @@ describe('Auth (e2e)', () => {
         })
         .expect(401);
 
-      expect(res.body.message).not.toMatch(/not found/i);
+      const body = res.body as ErrorResponse;
+
+      expect(body.message).not.toMatch(/not found/i);
     });
 
     it('rejects a real email with the wrong password', async () => {
@@ -107,10 +133,15 @@ describe('Auth (e2e)', () => {
 
       const res = await request(app.getHttpServer())
         .post('/api/auth/login')
-        .send({ email: ADMIN_EMAIL, password: 'definitely-wrong-password' })
+        .send({
+          email: ADMIN_EMAIL,
+          password: 'definitely-wrong-password',
+        })
         .expect(401);
 
-      expect(res.body.message).not.toMatch(/not found/i);
+      const body = res.body as ErrorResponse;
+
+      expect(body.message).not.toMatch(/not found/i);
     });
 
     it('logs in successfully with correct credentials', async () => {
@@ -121,20 +152,28 @@ describe('Auth (e2e)', () => {
 
       const res = await request(app.getHttpServer())
         .post('/api/auth/login')
-        .send({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD })
+        .send({
+          email: ADMIN_EMAIL,
+          password: ADMIN_PASSWORD,
+        })
         .expect(200);
 
-      expect(res.body).toHaveProperty('id');
-      expect(res.body).toHaveProperty('email', ADMIN_EMAIL);
-      expect(res.body).toHaveProperty('role');
-      expect(res.body).toHaveProperty('csrfToken');
-      expect(typeof res.body.csrfToken).toBe('string');
+      const body = res.body as LoginResponse;
+
+      expect(body).toHaveProperty('id');
+      expect(body).toHaveProperty('email', ADMIN_EMAIL);
+      expect(body).toHaveProperty('role');
+      expect(body).toHaveProperty('csrfToken');
+      expect(typeof body.csrfToken).toBe('string');
 
       const setCookie = res.headers['set-cookie'];
+
       expect(setCookie).toBeDefined();
+
       // Two cookies should be set: the session (HttpOnly) and the
       // readable CSRF cookie.
       const cookies = Array.isArray(setCookie) ? setCookie : [setCookie];
+
       expect(cookies.length).toBeGreaterThanOrEqual(2);
     });
   });
@@ -154,9 +193,11 @@ describe('Auth (e2e)', () => {
 
       const res = await agent.get('/api/auth/me').expect(200);
 
-      expect(res.body).toHaveProperty('id', user.id);
-      expect(res.body).toHaveProperty('email', user.email);
-      expect(res.body).toHaveProperty('role', user.role);
+      const body = res.body as AuthUserResponse;
+
+      expect(body).toHaveProperty('id', user.id);
+      expect(body).toHaveProperty('email', user.email);
+      expect(body).toHaveProperty('role', user.role);
     });
 
     it('rejects a garbage session cookie without a 500', async () => {
@@ -166,7 +207,7 @@ describe('Auth (e2e)', () => {
 
       // getCurrentUser() hashes whatever token it's given and looks it up —
       // a garbage token just won't match any session, so this should be a
-      // clean 401, not a crash. Documents current behavior either way.
+      // clean 401, not a crash.
       expect(res.status).toBe(401);
     });
   });

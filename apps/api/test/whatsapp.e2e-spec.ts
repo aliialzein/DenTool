@@ -4,6 +4,19 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 
+interface ProductResponse {
+  id: string;
+  stockQuantity: number;
+}
+
+interface ProductsResponse {
+  items: ProductResponse[];
+}
+
+interface WhatsAppResponse {
+  whatsappUrl: string;
+}
+
 describe('WhatsApp (e2e)', () => {
   let app: INestApplication<App>;
 
@@ -31,7 +44,10 @@ describe('WhatsApp (e2e)', () => {
     const res = await request(app.getHttpServer()).get(
       '/api/products?limit=1&isActive=true&isAvailable=true',
     );
-    const first = res.body?.items?.[0];
+
+    const body = res.body as ProductsResponse;
+    const first = body.items[0];
+
     sampleProductId = first?.id;
     sampleProductStock = first?.stockQuantity;
   });
@@ -47,6 +63,7 @@ describe('WhatsApp (e2e)', () => {
       );
       return true;
     }
+
     return false;
   };
 
@@ -187,7 +204,10 @@ describe('WhatsApp (e2e)', () => {
       // If your service has since been fixed to aggregate duplicate lines,
       // this assertion will fail — that's the signal to update this test.
       expect(res.status).toBe(201);
-      expect(res.body).toHaveProperty('whatsappUrl');
+
+      const body = res.body as WhatsAppResponse;
+
+      expect(body).toHaveProperty('whatsappUrl');
     });
 
     it('happy path: returns a valid wa.me URL for an in-stock item', async () => {
@@ -198,9 +218,11 @@ describe('WhatsApp (e2e)', () => {
         .send({ items: [{ productId: sampleProductId, quantity: 1 }] })
         .expect(201);
 
-      expect(res.body).toHaveProperty('whatsappUrl');
-      expect(typeof res.body.whatsappUrl).toBe('string');
-      expect(res.body.whatsappUrl.startsWith('https://wa.me/')).toBe(true);
+      const body = res.body as WhatsAppResponse;
+
+      expect(body).toHaveProperty('whatsappUrl');
+      expect(typeof body.whatsappUrl).toBe('string');
+      expect(body.whatsappUrl.startsWith('https://wa.me/')).toBe(true);
     });
   });
 });

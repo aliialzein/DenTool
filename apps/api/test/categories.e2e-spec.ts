@@ -1,8 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
-import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
+import type { App } from 'supertest/types';
+import { AppModule } from '../src/app.module';
+
+interface CategoryResponse {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 describe('Categories (e2e)', () => {
   let app: INestApplication<App>;
@@ -59,7 +65,10 @@ describe('Categories (e2e)', () => {
 
     beforeAll(async () => {
       const res = await request(app.getHttpServer()).get('/api/categories');
-      const first = Array.isArray(res.body) ? res.body[0] : undefined;
+
+      const categories = res.body as CategoryResponse[];
+      const first = categories[0];
+
       sampleSlug = first?.slug;
     });
 
@@ -75,7 +84,9 @@ describe('Categories (e2e)', () => {
         .get(`/api/categories/${sampleSlug}`)
         .expect(200);
 
-      expect(res.body).toHaveProperty('slug', sampleSlug);
+      const body = res.body as CategoryResponse;
+
+      expect(body).toHaveProperty('slug', sampleSlug);
     });
   });
 
@@ -84,6 +95,7 @@ describe('Categories (e2e)', () => {
       const res = await request(app.getHttpServer()).get(
         '/api/categories/admin',
       );
+
       expect([401, 403]).toContain(res.status);
     });
 
@@ -91,6 +103,7 @@ describe('Categories (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/categories')
         .send({ name: 'Test Category' });
+
       expect([401, 403]).toContain(res.status);
     });
 
@@ -98,6 +111,7 @@ describe('Categories (e2e)', () => {
       const res = await request(app.getHttpServer())
         .patch('/api/categories/00000000-0000-0000-0000-000000000000')
         .send({ name: 'Updated' });
+
       expect([401, 403]).toContain(res.status);
     });
 
@@ -105,6 +119,7 @@ describe('Categories (e2e)', () => {
       const res = await request(app.getHttpServer()).delete(
         '/api/categories/00000000-0000-0000-0000-000000000000',
       );
+
       expect([401, 403]).toContain(res.status);
     });
   });
@@ -115,7 +130,7 @@ describe('Categories (e2e)', () => {
     // 400 via the ValidationPipe rather than reach Prisma at all.
     // Auth guards run before the param DTO validates in Nest's pipeline,
     // so an unauthenticated request will still 401/403 first. These tests
-    // just confirm it fails clean either way (never a 500) with a bad id.
+    // just confirm it fails cleanly either way (never a 500).
 
     it('PATCH /api/categories/:id with a non-UUID id does not 500', async () => {
       const res = await request(app.getHttpServer())
