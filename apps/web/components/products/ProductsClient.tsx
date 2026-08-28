@@ -1,7 +1,11 @@
 'use client';
 
-import { useCallback } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useTransition } from 'react';
+import {
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from 'next/navigation';
 
 import { ProductGrid } from './ProductGrid';
 import { ProductSearch } from './ProductSearch';
@@ -14,7 +18,6 @@ import type {
   Product,
   ProductPagination,
 } from '../../types/product';
-
 import type { Category } from '../../types/category';
 import type { ProductCardData } from './ProductCard';
 
@@ -32,33 +35,38 @@ export function ProductsClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   const search = searchParams.get('search') ?? '';
 
   const filters: ProductFilterValues = {
-    categoryId: searchParams.get('categoryId') ?? undefined,
+    categoryId:
+      searchParams.get('categoryId') ?? undefined,
 
-    availability:
-      searchParams.get('isAvailable') === null
-        ? undefined
-        : searchParams.get('isAvailable') === 'true',
+    availability: parseAvailability(
+      searchParams.get('isAvailable'),
+    ),
 
-    minPrice: parseNumber(searchParams.get('minPrice')),
+    minPrice: parseNumber(
+      searchParams.get('minPrice'),
+    ),
 
-    maxPrice: parseNumber(searchParams.get('maxPrice')),
+    maxPrice: parseNumber(
+      searchParams.get('maxPrice'),
+    ),
 
-    sortBy:
-      (searchParams.get('sortBy') as ProductFilterValues['sortBy']) ??
-      'createdAt',
+    sortBy: parseSortBy(searchParams.get('sortBy')),
 
-    sortOrder:
-      (searchParams.get('sortOrder') as ProductFilterValues['sortOrder']) ??
-      'desc',
+    sortOrder: parseSortOrder(
+      searchParams.get('sortOrder'),
+    ),
   };
 
   const updateParams = useCallback(
     (updates: Record<string, string | undefined>) => {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = new URLSearchParams(
+        searchParams.toString(),
+      );
 
       Object.entries(updates).forEach(([key, value]) => {
         if (value === undefined || value === '') {
@@ -69,8 +77,15 @@ export function ProductsClient({
       });
 
       const query = params.toString();
+      const nextUrl = query
+        ? `${pathname}?${query}`
+        : pathname;
 
-      router.push(query ? `${pathname}?${query}` : pathname);
+      startTransition(() => {
+        router.replace(nextUrl, {
+          scroll: false,
+        });
+      });
     },
     [pathname, router, searchParams],
   );
@@ -105,9 +120,17 @@ export function ProductsClient({
             ? undefined
             : String(values.maxPrice),
 
-        sortBy: values.sortBy,
+        sortBy:
+          values.sortBy &&
+          values.sortBy !== 'createdAt'
+            ? values.sortBy
+            : undefined,
 
-        sortOrder: values.sortOrder,
+        sortOrder:
+          values.sortOrder &&
+          values.sortOrder !== 'desc'
+            ? values.sortOrder
+            : undefined,
 
         page: undefined,
       });
@@ -117,36 +140,61 @@ export function ProductsClient({
 
   const handlePageChange = useCallback(
     (page: number) => {
+      if (page < 1 || page > pagination.totalPages) {
+        return;
+      }
+
       updateParams({
         page: page === 1 ? undefined : String(page),
       });
     },
-    [updateParams],
+    [pagination.totalPages, updateParams],
   );
 
-  const mappedProducts = products.map(mapProductToCardData);
+  const mappedProducts = products.map(
+    mapProductToCardData,
+  );
+
+  const productLabel =
+    pagination.total === 1 ? 'product' : 'products';
 
   return (
-    <div className="space-y-8">
-      {/* Search */}
+    <div
+      aria-busy={isPending}
+      className={`space-y-7 transition-opacity ${
+        isPending ? 'opacity-60' : 'opacity-100'
+      }`}
+    >
       <ProductSearch
         value={search}
         onChange={handleSearch}
       />
 
-      {/* Filters */}
       <ProductFilters
         categories={categories}
         values={filters}
         onChange={handleFilters}
       />
 
-      {/* Results header */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
-          {pagination.total} product
-          {pagination.total === 1 ? '' : 's'}
-        </p>
+      <div className="flex flex-col gap-4 border-b border-blue-100 pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          aria-live="polite"
+          className="text-sm text-slate-600"
+        >
+          <span className="font-bold text-slate-950">
+            {pagination.total}
+          </span>{' '}
+          {productLabel}
+          {search && (
+            <>
+              {' '}
+              matching{' '}
+              <span className="font-semibold text-blue-700">
+                “{search}”
+              </span>
+            </>
+          )}
+        </div>
 
         {pagination.totalPages > 1 && (
           <Pagination
@@ -156,12 +204,10 @@ export function ProductsClient({
         )}
       </div>
 
-      {/* Products */}
       <ProductGrid products={mappedProducts} />
 
-      {/* Bottom pagination */}
       {pagination.totalPages > 1 && (
-        <div className="flex justify-center pt-4">
+        <div className="flex justify-center border-t border-blue-100 pt-7">
           <Pagination
             pagination={pagination}
             onPageChange={handlePageChange}
@@ -184,42 +230,96 @@ function Pagination({
   const { page, totalPages } = pagination;
 
   return (
-    <div className="flex items-center gap-2">
+    <nav
+      aria-label="Product pagination"
+      className="flex items-center gap-2"
+    >
       <button
         type="button"
-        disabled={page === 1}
+        disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
-        className="rounded-md border border-gray-300 px-3 py-2 text-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        className="inline-flex min-h-10 items-center rounded-lg border border-blue-200 bg-white px-3 text-sm font-bold text-blue-700 transition hover:bg-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400 disabled:hover:bg-white"
       >
+        <ArrowLeftIcon
+          aria-hidden="true"
+          className="mr-2"
+        />
         Previous
       </button>
 
-      <span className="px-2 text-sm text-gray-600">
+      <span
+        aria-current="page"
+        className="min-h-10 rounded-lg bg-blue-50 px-3 py-2 text-sm font-bold text-slate-900"
+      >
         Page {page} of {totalPages}
       </span>
 
       <button
         type="button"
-        disabled={page === totalPages}
+        disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
-        className="rounded-md border border-gray-300 px-3 py-2 text-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        className="inline-flex min-h-10 items-center rounded-lg border border-blue-200 bg-white px-3 text-sm font-bold text-blue-700 transition hover:bg-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400 disabled:hover:bg-white"
       >
         Next
+        <ArrowRightIcon
+          aria-hidden="true"
+          className="ml-2"
+        />
       </button>
-    </div>
+    </nav>
   );
 }
 
 function parseNumber(
   value: string | null,
 ): number | undefined {
-  if (value === null || value === '') {
+  if (value === null || value.trim() === '') {
     return undefined;
   }
 
   const number = Number(value);
 
-  return Number.isFinite(number) ? number : undefined;
+  return Number.isFinite(number) && number >= 0
+    ? number
+    : undefined;
+}
+
+function parseAvailability(
+  value: string | null,
+): boolean | undefined {
+  if (value === 'true') {
+    return true;
+  }
+
+  if (value === 'false') {
+    return false;
+  }
+
+  return undefined;
+}
+
+function parseSortBy(
+  value: string | null,
+): ProductFilterValues['sortBy'] {
+  if (
+    value === 'name' ||
+    value === 'price' ||
+    value === 'createdAt'
+  ) {
+    return value;
+  }
+
+  return 'createdAt';
+}
+
+function parseSortOrder(
+  value: string | null,
+): ProductFilterValues['sortOrder'] {
+  if (value === 'asc' || value === 'desc') {
+    return value;
+  }
+
+  return 'desc';
 }
 
 function mapProductToCardData(
@@ -229,9 +329,9 @@ function mapProductToCardData(
     ? product.images
     : [];
 
-  const primaryImage = [...images].sort(
-    (a, b) => a.sortOrder - b.sortOrder,
-  )[0];
+  const primaryImage = [...images]
+    .filter((image) => image.secureUrl)
+    .sort((a, b) => a.sortOrder - b.sortOrder)[0];
 
   return {
     id: product.id,
@@ -248,4 +348,46 @@ function mapProductToCardData(
         }
       : undefined,
   };
+}
+
+function ArrowLeftIcon(
+  props: React.SVGProps<SVGSVGElement>,
+) {
+  return (
+    <svg
+      {...props}
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M19 12H5" />
+      <path d="m11 18-6-6 6-6" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon(
+  props: React.SVGProps<SVGSVGElement>,
+) {
+  return (
+    <svg
+      {...props}
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M5 12h14" />
+      <path d="m13 6 6 6-6 6" />
+    </svg>
+  );
 }
