@@ -7,6 +7,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { CartItem } from '@/components/cart/CartItem';
 import { CartSummary } from '@/components/cart/CartSummary';
+import { Button } from '@/components/ui/Button';
 
 import {
   useAppDispatch,
@@ -29,18 +30,31 @@ import type { CartItemData } from '@/components/cart/CartItem';
 
 export default function CartPage() {
   const dispatch = useAppDispatch();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [whatsappError, setWhatsappError] = useState<string | null>(null);
+
   const cartItems = useAppSelector(
     (state) => state.cart.items,
   );
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [missingProductIds, setMissingProductIds] = useState<string[]>([]);
+  const [missingProductIds, setMissingProductIds] = useState<
+    string[]
+  >([]);
+
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+
   const [error, setError] = useState<string | null>(null);
+  const [whatsappError, setWhatsappError] = useState<string | null>(
+    null,
+  );
+
   const productIdsKey = useMemo(
-    () => cartItems.map((item) => item.productId).sort().join(','),
+    () =>
+      cartItems
+        .map((item) => item.productId)
+        .sort()
+        .join(','),
     [cartItems],
   );
 
@@ -67,27 +81,32 @@ export default function CartPage() {
           cartItems.map((cartItem) => cartItem.productId),
         );
 
-        if (!cancelled) {
-          setProducts(
-            loadedProducts.filter(
-              (product): product is Product => product !== null,
-            ),
-          );
-          setMissingProductIds(
-            cartItems
-              .map((cartItem) => cartItem.productId)
-              .filter(
-                (productId) =>
-                  !loadedProducts.some((product) => product?.id === productId),
-              ),
-          );
+        if (cancelled) {
+          return;
         }
+
+        const availableProducts = loadedProducts.filter(
+          (product): product is Product => product !== null,
+        );
+
+        setProducts(availableProducts);
+
+        setMissingProductIds(
+          cartItems
+            .map((cartItem) => cartItem.productId)
+            .filter(
+              (productId) =>
+                !loadedProducts.some(
+                  (product) => product?.id === productId,
+                ),
+            ),
+        );
       } catch (err) {
         if (!cancelled) {
           setError(
             err instanceof Error
               ? err.message
-              : 'Failed to load cart products.',
+              : 'We could not load your cart.',
           );
         }
       } finally {
@@ -102,7 +121,7 @@ export default function CartPage() {
     return () => {
       cancelled = true;
     };
-  }, [productIdsKey]);
+  }, [cartItems, productIdsKey, loadAttempt]);
 
   const cartItemsData = useMemo(() => {
     return cartItems.flatMap((cartItem) => {
@@ -114,7 +133,11 @@ export default function CartPage() {
         return [];
       }
 
-      const primaryImage = [...product.images].sort(
+      const images = Array.isArray(product.images)
+        ? product.images
+        : [];
+
+      const primaryImage = [...images].sort(
         (a, b) => a.sortOrder - b.sortOrder,
       )[0];
 
@@ -171,14 +194,17 @@ export default function CartPage() {
         quantity: cartItem.quantity,
       }));
 
-      const { whatsappUrl } = await createWhatsAppPurchaseRequest(items);
+      const { whatsappUrl } =
+        await createWhatsAppPurchaseRequest(items);
 
       window.location.href = whatsappUrl;
     } catch (err) {
       if (err instanceof WhatsAppPurchaseError) {
         setWhatsappError(err.message);
       } else {
-        setWhatsappError('Something went wrong. Please try again.');
+        setWhatsappError(
+          'Something went wrong. Please try again.',
+        );
       }
 
       setIsSubmitting(false);
@@ -186,90 +212,279 @@ export default function CartPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-white text-slate-950">
       <Header />
 
-      <section className="mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">
-            Your Cart
-          </p>
+      <section
+        aria-labelledby="cart-heading"
+        className="border-b border-blue-100 bg-gradient-to-b from-blue-50/70 via-white to-white"
+      >
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+          <nav
+            aria-label="Breadcrumb"
+            className="mb-8 flex items-center gap-2 text-sm text-slate-500"
+          >
+            <Link
+              href="/"
+              className="transition hover:text-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
+            >
+              Home
+            </Link>
 
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900">
-            Shopping Cart
-          </h1>
+            <span aria-hidden="true">/</span>
 
-          <p className="mt-2 text-sm text-gray-500">
-            Review your selected dental products before continuing.
-          </p>
-        </div>
+            <span className="font-semibold text-slate-900">
+              Cart
+            </span>
+          </nav>
 
-        {isLoading ? (
-          <div className="rounded-lg border border-gray-100 p-10 text-center text-sm text-gray-500">
-            Loading cart...
-          </div>
-        ) : error ? (
-          <div className="rounded-lg border border-red-100 bg-red-50 p-6 text-sm text-red-600">
-            {error}
-          </div>
-        ) : cartItems.length === 0 ? (
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-10 text-center">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Your cart is empty
-            </h2>
-
-            <p className="mt-2 text-sm text-gray-500">
-              Browse our products and add the items you need.
+          <div className="mb-10">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
+              Your selection
             </p>
 
-            <Link
-              href="/products"
-              className="mt-6 inline-flex rounded-md bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+            <h1
+              id="cart-heading"
+              className="mt-3 text-4xl font-bold tracking-[-0.04em] text-slate-950 sm:text-5xl"
             >
-              Browse Products
-            </Link>
+              Shopping cart
+            </h1>
+
+            <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
+              Review your selected dental products before
+              continuing with your order.
+            </p>
           </div>
-        ) : (
-          <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
-            <div className="rounded-lg border border-gray-100 bg-white">
-              {missingProductIds.length > 0 && (
-                <div className="border-b border-amber-100 bg-amber-50 px-5 py-4 text-sm text-amber-800">
-                  {missingProductIds.length === 1
-                    ? 'One item in your cart is no longer available and is not included in the total.'
-                    : `${missingProductIds.length} items in your cart are no longer available and are not included in the total.`}
+
+          {isLoading ? (
+            <CartLoadingState />
+          ) : error ? (
+            <CartErrorState
+              message={error}
+              onRetry={() => setLoadAttempt((attempt) => attempt + 1)}
+            />
+          ) : cartItems.length === 0 ? (
+            <EmptyCartState />
+          ) : (
+            <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+              <div>
+                <div className="mb-4 flex items-center justify-between gap-4">
+                  <h2 className="text-lg font-bold text-slate-950">
+                    Selected products
+                  </h2>
+
+                  <span className="text-sm text-slate-500">
+                    {itemCount}{' '}
+                    {itemCount === 1 ? 'item' : 'items'}
+                  </span>
                 </div>
-              )}
-              <div className="px-5">
-                {cartItemsData.map((item) => (
-                  <CartItem
-                    key={item.productId}
-                    item={item}
-                    onQuantityChange={
-                      handleQuantityChange
-                    }
-                    onRemove={handleRemove}
-                  />
-                ))}
+
+                <div className="rounded-2xl border border-blue-100 bg-white px-5 shadow-sm sm:px-6">
+                  {missingProductIds.length > 0 && (
+                    <div
+                      role="status"
+                      className="mx-0 border-b border-amber-200 bg-amber-50 px-1 py-4 text-sm leading-6 text-amber-900"
+                    >
+                      {missingProductIds.length === 1
+                        ? 'One item in your cart is no longer available and has been removed from the total.'
+                        : `${missingProductIds.length} items in your cart are no longer available and have been removed from the total.`}
+                    </div>
+                  )}
+
+                  {cartItemsData.length > 0 ? (
+                    cartItemsData.map((item) => (
+                      <CartItem
+                        key={item.productId}
+                        item={item}
+                        onQuantityChange={
+                          handleQuantityChange
+                        }
+                        onRemove={handleRemove}
+                      />
+                    ))
+                  ) : (
+                    <div className="py-12 text-center">
+                      <p className="text-sm text-slate-600">
+                        The products in your cart are no longer
+                        available.
+                      </p>
+
+                      <Link
+                        href="/products"
+                        className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-700 px-5 text-sm font-bold text-white transition hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200"
+                      >
+                        Browse products
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
+                <Link
+                  href="/products"
+                  className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-blue-700 transition hover:text-blue-900 focus:outline-none focus:ring-4 focus:ring-blue-100"
+                >
+                  <ArrowLeftIcon aria-hidden="true" />
+                  Continue shopping
+                </Link>
+              </div>
+
+              <div>
+                {whatsappError && (
+                  <div
+                    role="alert"
+                    className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-800"
+                  >
+                    {whatsappError}
+                  </div>
+                )}
+
+                <CartSummary
+                  subtotal={subtotal}
+                  itemCount={itemCount}
+                  onContinueToWhatsApp={
+                    handleContinueToWhatsApp
+                  }
+                  isSubmitting={isSubmitting}
+                />
               </div>
             </div>
-
-            {whatsappError && (
-            <div className="mb-4 rounded-lg border border-red-100 bg-red-50 p-4 text-sm text-red-600">
-              {whatsappError}
-            </div>
           )}
-
-          <CartSummary
-            subtotal={subtotal}
-            itemCount={itemCount}
-            onContinueToWhatsApp={handleContinueToWhatsApp}
-            isSubmitting={isSubmitting}
-          />
-          </div>
-        )}
+        </div>
       </section>
 
       <Footer />
     </main>
+  );
+}
+
+function CartLoadingState() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]"
+    >
+      <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
+        <div className="animate-pulse space-y-6">
+          {[1, 2].map((item) => (
+            <div
+              key={item}
+              className="flex gap-4 border-b border-blue-100 pb-6 last:border-b-0 last:pb-0"
+            >
+              <div className="h-24 w-24 rounded-xl bg-blue-50" />
+
+              <div className="flex-1 space-y-3">
+                <div className="h-4 w-2/3 rounded bg-blue-50" />
+                <div className="h-4 w-1/3 rounded bg-blue-50" />
+                <div className="h-9 w-28 rounded-lg bg-blue-50" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <span className="sr-only">Loading your cart...</span>
+      </div>
+
+      <div className="h-72 animate-pulse rounded-2xl bg-blue-50" />
+    </div>
+  );
+}
+
+function CartErrorState({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div
+      role="alert"
+      className="rounded-2xl border border-red-200 bg-red-50 p-6 sm:p-8"
+    >
+      <h2 className="text-lg font-bold text-red-950">
+        We could not load your cart
+      </h2>
+
+      <p className="mt-2 text-sm leading-6 text-red-800">
+        {message}
+      </p>
+
+      <Button
+        type="button"
+        variant="outline"
+        onClick={onRetry}
+        className="mt-5 border-red-300 bg-white text-red-800 hover:border-red-500 hover:bg-red-100"
+      >
+        Try again
+      </Button>
+    </div>
+  );
+}
+
+function EmptyCartState() {
+  return (
+    <div className="rounded-2xl border border-blue-100 bg-blue-50/60 px-6 py-14 text-center sm:px-10">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white text-blue-700 shadow-sm">
+        <CartIcon aria-hidden="true" />
+      </div>
+
+      <h2 className="mt-5 text-2xl font-bold tracking-tight text-slate-950">
+        Your cart is empty
+      </h2>
+
+      <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-600">
+        Explore our dental products and add the tools and
+        materials you need for your practice.
+      </p>
+
+      <Link
+        href="/products"
+        className="mt-7 inline-flex min-h-12 items-center justify-center rounded-lg bg-blue-700 px-6 text-sm font-bold text-white transition hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200"
+      >
+        Browse products
+      </Link>
+    </div>
+  );
+}
+
+function ArrowLeftIcon(
+  props: React.SVGProps<SVGSVGElement>,
+) {
+  return (
+    <svg
+      {...props}
+      width="17"
+      height="17"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M19 12H5" />
+      <path d="m11 18-6-6 6-6" />
+    </svg>
+  );
+}
+
+function CartIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      width="26"
+      height="26"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="9" cy="20" r="1" />
+      <circle cx="19" cy="20" r="1" />
+      <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 1.9-1.4L22 8H6" />
+    </svg>
   );
 }
