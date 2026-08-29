@@ -3,6 +3,7 @@ import { describe, expect, it, jest } from '@jest/globals';
 import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
 import { SessionGuard } from '../auth/guards/session.guard';
+import { CacheService } from '../../infrastructure/cache/cache.service';
 
 describe('ProductsController', () => {
   it('forwards the static by-ids query to the service', async () => {
@@ -15,7 +16,10 @@ describe('ProductsController', () => {
     };
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProductsController],
-      providers: [{ provide: ProductsService, useValue: productsService }],
+      providers: [
+        { provide: ProductsService, useValue: productsService },
+        { provide: CacheService, useValue: { get: jest.fn(), set: jest.fn() } },
+      ],
     })
       .overrideGuard(SessionGuard)
       .useValue({ canActivate: () => true })

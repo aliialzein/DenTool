@@ -6,6 +6,7 @@ import { ProductsRepository } from './repositories/products.repositories';
 import { ProductImagesRepository } from './repositories/product-images.repositories';
 import { ImageKitService } from '../../integrations/ImageKit/imagekit.service';
 import { ProductsService } from './products.service';
+import { CacheService } from '../../infrastructure/cache/cache.service';
 
 describe('ProductsService', () => {
   let service: ProductsService;
@@ -42,6 +43,7 @@ describe('ProductsService', () => {
           useValue: productImagesRepository,
         },
         { provide: ImageKitService, useValue: imageKitService },
+        { provide: CacheService, useValue: { get: jest.fn(), set: jest.fn() } },
       ],
     }).compile();
 
