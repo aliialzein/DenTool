@@ -8,6 +8,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { ProductsModule } from './modules/products/products.module';
 import { ImageKitModule } from './integrations/ImageKit/imagekit.module';
 import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
+import { CacheModule } from './infrastructure/cache/cache.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
     CategoriesModule,
     ProductsModule,
     ImageKitModule,
+    CacheModule,
     WhatsAppModule,
   ],
   controllers: [AppController],

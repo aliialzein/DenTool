@@ -15,6 +15,12 @@ import { ImageKitService } from '../../integrations/ImageKit/imagekit.service';
 import { ProductImagesRepository } from './repositories/product-images.repositories';
 import { CreateImageSignatureDto } from './dto/create-image-signature.dto';
 import { AttachProductImageDto } from './dto/attach-product-image.dto';
+import { CacheService } from '../../infrastructure/cache/cache.service';
+import {
+  getProductBySlugCacheKey,
+  PRODUCT_CACHE_TTL_SECONDS,
+} from './products.cache';
+import { ProductResponse } from './products.types';
 
 @Injectable()
 export class ProductsService {
@@ -22,6 +28,7 @@ export class ProductsService {
     private readonly productsRepository: ProductsRepository,
     private readonly productImagesRepository: ProductImagesRepository,
     private readonly imageKitService: ImageKitService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async findMany(query: FindProductsDto) {
@@ -106,7 +113,16 @@ export class ProductsService {
     return { ...product, price: Number(product.price) };
   }
 
-  async findBySlug(slug: string) {
+  async findBySlug(slug: string): Promise<ProductResponse> {
+    const cacheKey = getProductBySlugCacheKey(slug);
+
+    const cachedProduct =
+      await this.cacheService.get<ProductResponse>(cacheKey);
+
+    if (cachedProduct) {
+      return cachedProduct;
+    }
+
     const product = await this.productsRepository.findBySlug(slug);
 
     if (!product || !product.isActive) {
@@ -116,10 +132,14 @@ export class ProductsService {
       });
     }
 
-    return {
+    const result: ProductResponse = {
       ...product,
       price: Number(product.price),
     };
+
+    await this.cacheService.set(cacheKey, result, PRODUCT_CACHE_TTL_SECONDS);
+
+    return result;
   }
 
   async create(data: CreateProductDto) {
@@ -221,7 +241,14 @@ export class ProductsService {
       }),
     };
 
-    return this.productsRepository.update(id, productData);
+    const updatedProduct = await this.productsRepository.update(
+      id,
+      productData,
+    );
+
+    await this.cacheService.delete(getProductBySlugCacheKey(product.slug));
+
+    return updatedProduct;
   }
 
   async delete(id: string) {
@@ -234,7 +261,9 @@ export class ProductsService {
       });
     }
 
-    return this.productsRepository.delete(id);
+    await this.productsRepository.delete(id);
+
+    await this.cacheService.delete(getProductBySlugCacheKey(product.slug));
   }
 
   async generateImageUploadSignature(
