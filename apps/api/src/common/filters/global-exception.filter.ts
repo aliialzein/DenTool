@@ -4,15 +4,15 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
-  Logger,
 } from '@nestjs/common';
+import type { LoggerService } from '@nestjs/common';
 import { Request, Response } from 'express';
 
 import { ApiErrorResponse } from '../types/api-error-response.type';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(GlobalExceptionFilter.name);
+  constructor(private readonly logger: LoggerService) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
@@ -29,6 +29,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       statusCode = exception.getStatus();
+
+      this.logger.warn(
+        `HTTP ${statusCode} on ${request.method} ${request.url}`,
+        GlobalExceptionFilter.name,
+      );
 
       const exceptionResponse = exception.getResponse();
 
@@ -71,6 +76,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       this.logger.error(
         `Unhandled exception on ${request.method} ${request.url}`,
         exception instanceof Error ? exception.stack : undefined,
+        GlobalExceptionFilter.name,
       );
     }
 

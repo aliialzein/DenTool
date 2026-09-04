@@ -15,7 +15,11 @@ interface ErrorResponse {
 }
 
 describe('GlobalExceptionFilter', () => {
-  const filter = new GlobalExceptionFilter();
+  const logger = {
+    error: jest.fn(),
+    warn: jest.fn(),
+  };
+  const filter = new GlobalExceptionFilter(logger);
 
   const createMockHost = () => {
     const json = jest.fn();
@@ -89,6 +93,19 @@ describe('GlobalExceptionFilter', () => {
         code: 'UNAUTHORIZED',
         message: 'Invalid credentials',
       }),
+    );
+  });
+
+  it('should log unexpected exceptions with request context and a stack trace', () => {
+    const { host } = createMockHost();
+    const exception = new Error('database unavailable');
+
+    filter.catch(exception, host);
+
+    expect(logger.error).toHaveBeenCalledWith(
+      'Unhandled exception on GET /api/test',
+      exception.stack,
+      GlobalExceptionFilter.name,
     );
   });
 

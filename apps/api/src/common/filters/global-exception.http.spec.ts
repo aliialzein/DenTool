@@ -49,7 +49,9 @@ describe('GlobalExceptionFilter HTTP integration', () => {
 
     app = moduleRef.createNestApplication();
 
-    app.useGlobalFilters(new GlobalExceptionFilter());
+    app.useGlobalFilters(
+      new GlobalExceptionFilter({ error: jest.fn(), warn: jest.fn() }),
+    );
 
     await app.init();
   });

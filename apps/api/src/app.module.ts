@@ -10,6 +10,7 @@ import { ProductsModule } from './modules/products/products.module';
 import { ImageKitModule } from './integrations/ImageKit/imagekit.module';
 import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
 import { CacheModule } from './infrastructure/cache/cache.module';
+import { LoggerModule } from './common/logger/logger.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { CacheModule } from './infrastructure/cache/cache.module';
       isGlobal: true,
       validate: validateEnvironment,
     }),
+    LoggerModule,
     PrismaModule,
     AuthModule,
     CategoriesModule,
