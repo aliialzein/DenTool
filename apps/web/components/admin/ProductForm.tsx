@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { adminApi, uploadToImageKit } from "@/lib/api/admin";
 import { ImageUploader } from "./ImageUploader";
 import type { Category, Product } from "@/types/admin";
+import Image from "next/image";
 type Values = {
   categoryId: string;
   name: string;
@@ -134,10 +135,10 @@ export function ProductForm({ product }: { product?: Product }) {
   return (
     <form
       onSubmit={submit}
-      className="space-y-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      className="space-y-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
     >
       {error && (
-        <p role="alert" className="rounded bg-red-50 p-3 text-sm text-red-700">
+        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
           {error}
         </p>
       )}
@@ -152,12 +153,12 @@ export function ProductForm({ product }: { product?: Product }) {
           value={values.slug}
           onChange={(value) => change("slug", value)}
         />
-        <label className="text-sm font-medium">
+        <label className="text-sm font-semibold text-slate-950">
           Category
           <select
             value={values.categoryId}
             onChange={(e) => change("categoryId", e.target.value)}
-            className="mt-1 w-full rounded-md border p-2.5"
+            className="mt-2 min-h-11 w-full rounded-lg border border-slate-200 px-3.5 text-sm font-normal outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
           >
             <option value="">Select a category</option>
             {categories.map((category) => (
@@ -184,12 +185,12 @@ export function ProductForm({ product }: { product?: Product }) {
           onChange={(value) => change("stockQuantity", value)}
         />
       </div>
-      <label className="block text-sm font-medium">
+      <label className="block text-sm font-semibold text-slate-950">
         Description
         <textarea
           value={values.description}
           onChange={(e) => change("description", e.target.value)}
-          className="mt-1 min-h-28 w-full rounded-md border p-2.5"
+          className="mt-2 min-h-28 w-full rounded-lg border border-slate-200 p-3.5 text-sm font-normal outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
         />
       </label>
       <UseCasesEditor
@@ -212,13 +213,16 @@ export function ProductForm({ product }: { product?: Product }) {
           onChange={(checked) => change("isActive", checked)}
         />
       </div>
+      <p className="-mt-3 text-sm leading-6 text-slate-500">
+        Available controls whether customers can purchase. Active controls whether the product is visible in the public catalog.
+      </p>
       {images.length ? (
         <div>
           <p className="mb-2 text-sm font-medium">Current images</p>
           <div className="flex flex-wrap gap-3">
             {images.map((image, index) => (
               <div key={image.id} className="flex flex-col gap-1">
-                <img src={image.secureUrl} alt={`Product image ${index + 1}`} className="h-20 w-20 rounded border object-cover" />
+                <Image src={image.secureUrl} alt={`Product image ${index + 1}`} className="h-20 w-20 rounded border object-cover" />
                 <div className="flex gap-1 text-xs">
                   <button type="button" disabled={index === 0} onClick={() => moveImage(index, -1)} className="rounded border px-1 disabled:opacity-40">Left</button>
                   <button type="button" disabled={index === images.length - 1} onClick={() => moveImage(index, 1)} className="rounded border px-1 disabled:opacity-40">Right</button>
@@ -241,17 +245,17 @@ export function ProductForm({ product }: { product?: Product }) {
         onChange={setFiles}
         max={Math.max(0, 5 - images.length)}
       />
-      <div className="flex justify-end gap-3">
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <button
           type="button"
           onClick={() => router.back()}
-          className="rounded-md border px-4 py-2 text-sm"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-200 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
         >
           Cancel
         </button>
         <button
           disabled={saving}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white transition hover:bg-blue-800 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? "Saving…" : "Save product"}
         </button>

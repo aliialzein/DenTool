@@ -8,8 +8,9 @@ import {
   type Product,
   type ProductsResponse,
 } from "@/types/admin";
+import Image from "next/image";
 function Message({ value }: { value: string }) {
-  return <p className="rounded bg-red-50 p-3 text-sm text-red-700">{value}</p>;
+  return <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{value}</p>;
 }
 export function Dashboard() {
   const [products, setProducts] = useState<ProductsResponse>();
@@ -38,7 +39,7 @@ export function Dashboard() {
   ];
   return (
     <div className="space-y-7">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Catalog dashboard</h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -48,13 +49,13 @@ export function Dashboard() {
         <div className="flex gap-2">
           <Link
             href="/admin/products/new"
-            className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white transition hover:bg-blue-800 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
           >
             New product
           </Link>
           <Link
             href="/admin/categories/new"
-            className="rounded-md border px-3 py-2 text-sm font-semibold"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue-200 bg-white px-4 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
           >
             New category
           </Link>
@@ -71,7 +72,7 @@ export function Dashboard() {
           </div>
         ))}
       </div>
-      <section className="rounded-xl border border-slate-200 bg-white p-5">
+      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="font-semibold">Unavailable or sold-out products</h2>
         <div className="mt-3 space-y-2">
           {visible
@@ -83,7 +84,7 @@ export function Dashboard() {
               <Link
                 key={product.id}
                 href={`/admin/products/${product.id}`}
-                className="block rounded p-2 text-sm hover:bg-slate-50"
+                className="block rounded-lg p-3 text-sm transition hover:bg-slate-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-100"
               >
                 {product.name}{" "}
                 <span className="text-slate-500">
@@ -141,7 +142,7 @@ export function ProductsPageClient() {
   if (error) return <Message value={error} />;
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Products</h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -150,7 +151,7 @@ export function ProductsPageClient() {
         </div>
         <Link
           href="/admin/products/new"
-          className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white transition hover:bg-blue-800 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
         >
           New product
         </Link>
@@ -161,18 +162,18 @@ export function ProductsPageClient() {
           setPage(1);
           load();
         }}
-        className="flex flex-wrap gap-2 rounded-xl border bg-white p-3"
+        className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
       >
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search products"
-          className="rounded border p-2 text-sm"
+          className="min-h-11 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
         />
         <select
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
-          className="rounded border p-2 text-sm"
+          className="min-h-11 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
         >
           <option value="">All categories</option>
           {categories.map((category) => (
@@ -184,26 +185,26 @@ export function ProductsPageClient() {
         <select
           value={availability}
           onChange={(e) => setAvailability(e.target.value)}
-          className="rounded border p-2 text-sm"
+          className="min-h-11 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
         >
           <option value="">All availability</option>
           <option value="true">Available</option>
           <option value="false">Unavailable</option>
         </select>
-        <button className="rounded bg-slate-900 px-3 py-2 text-sm text-white">
+        <button className="min-h-11 rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-300">
           Filter
         </button>
       </form>
       {!data ? (
-        <p className="text-sm text-slate-500">Loading products…</p>
+        <p role="status" className="text-sm text-slate-500">Loading products…</p>
       ) : data.items.length === 0 ? (
-        <div className="rounded border bg-white p-8 text-center text-sm text-slate-500">
+        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
           No products found.
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-            <table className="w-full text-left text-sm">
+          <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white md:block">
+            <table className="w-full min-w-[720px] text-left text-sm">
               <thead className="bg-slate-50 text-slate-500">
                 <tr>
                   <th className="p-3">Product</th>
@@ -220,7 +221,7 @@ export function ProductsPageClient() {
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         {product.images[0] ? (
-                          <img
+                          <Image
                             src={product.images[0].secureUrl}
                             alt=""
                             className="h-9 w-9 rounded object-cover"
@@ -260,13 +261,35 @@ export function ProductsPageClient() {
               </tbody>
             </table>
           </div>
+          <div className="space-y-3 md:hidden">
+            {data.items.map((product) => (
+              <article key={product.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  {product.images[0] ? <Image src={product.images[0].secureUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" /> : <span className="h-12 w-12 shrink-0 rounded-lg bg-slate-100" />}
+                  <div className="min-w-0 flex-1">
+                    <h2 className="font-semibold text-slate-950">{product.name}</h2>
+                    <p className="mt-1 text-sm text-slate-500">{product.category?.name ?? "Uncategorized"}</p>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${product.isAvailable ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>{product.isAvailable ? "Available" : "Unavailable"}</span>
+                </div>
+                <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-3 text-sm">
+                  <div><dt className="text-slate-500">Price</dt><dd className="mt-1 font-semibold">${Number(product.price).toFixed(2)}</dd></div>
+                  <div><dt className="text-slate-500">Stock</dt><dd className="mt-1 font-semibold">{product.stockQuantity}</dd></div>
+                </dl>
+                <div className="mt-4 flex gap-4 border-t border-slate-100 pt-3 text-sm font-semibold">
+                  <Link href={`/admin/products/${product.id}`} className="text-blue-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-100">Edit</Link>
+                  <button onClick={() => remove(product)} className="text-red-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-red-100">Delete</button>
+                </div>
+              </article>
+            ))}
+          </div>
           <div className="flex justify-between text-sm">
             <span>{data.pagination.total} products</span>
             <div className="flex gap-2">
               <button
                 disabled={page === 1}
                 onClick={() => setPage(page - 1)}
-                className="rounded border px-3 py-1 disabled:opacity-50"
+                className="min-h-10 rounded-lg border border-slate-200 px-3 text-sm font-semibold transition hover:bg-slate-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Previous
               </button>
@@ -276,7 +299,7 @@ export function ProductsPageClient() {
               <button
                 disabled={page >= data.pagination.totalPages}
                 onClick={() => setPage(page + 1)}
-                className="rounded border px-3 py-1 disabled:opacity-50"
+                className="min-h-10 rounded-lg border border-slate-200 px-3 text-sm font-semibold transition hover:bg-slate-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Next
               </button>
@@ -328,7 +351,7 @@ export function CategoriesPageClient() {
   );
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Categories</h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -337,28 +360,29 @@ export function CategoriesPageClient() {
         </div>
         <Link
           href="/admin/categories/new"
-          className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white transition hover:bg-blue-800 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
         >
           New category
         </Link>
       </div>
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex w-full flex-col gap-2 text-sm font-semibold text-slate-900 sm:w-fit sm:flex-row sm:items-center">
         Status
-        <select value={status} onChange={(event) => setStatus(event.target.value as typeof status)} className="rounded border p-2">
+        <select value={status} onChange={(event) => setStatus(event.target.value as typeof status)} className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm font-normal outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100">
           <option value="all">All</option>
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
         </select>
       </label>
       {!items ? (
-        <p className="text-sm text-slate-500">Loading categories…</p>
+        <p role="status" className="text-sm text-slate-500">Loading categories…</p>
       ) : filteredItems?.length === 0 ? (
-        <div className="rounded border bg-white p-8 text-center text-sm text-slate-500">
+        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
           No categories found.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-          <table className="w-full text-left text-sm">
+        <>
+        <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white md:block">
+          <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="bg-slate-50 text-slate-500">
               <tr>
                 <th className="p-3">Category</th>
@@ -374,7 +398,7 @@ export function CategoriesPageClient() {
                   <td className="p-3">
                     <div className="flex items-center gap-2">
                       {category.imageUrl ? (
-                        <img
+                        <Image
                           src={category.imageUrl}
                           alt=""
                           className="h-9 w-9 rounded object-cover"
@@ -419,6 +443,27 @@ export function CategoriesPageClient() {
             </tbody>
           </table>
         </div>
+        <div className="space-y-3 md:hidden">
+          {filteredItems?.map((category) => (
+            <article key={category.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex items-start gap-3">
+                {category.imageUrl ? <Image src={category.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" /> : <span className="h-12 w-12 shrink-0 rounded-lg bg-slate-100" />}
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-semibold text-slate-950">{category.name}</h2>
+                  <p className="mt-1 text-sm text-slate-500">/{category.slug}</p>
+                </div>
+                <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${category.isActive ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{category.isActive ? "Active" : "Inactive"}</span>
+              </div>
+              {category.description && <p className="mt-4 border-t border-slate-100 pt-3 text-sm leading-6 text-slate-600">{category.description}</p>}
+              <div className="mt-4 flex flex-wrap gap-4 border-t border-slate-100 pt-3 text-sm font-semibold">
+                <Link href={`/admin/categories/${category.id}`} className="text-blue-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-100">Edit</Link>
+                <button onClick={() => toggle(category)} className="text-amber-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-100">{category.isActive ? "Deactivate" : "Activate"}</button>
+                <button onClick={() => remove(category)} className="text-red-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-red-100">Delete</button>
+              </div>
+            </article>
+          ))}
+        </div>
+        </>
       )}
     </div>
   );

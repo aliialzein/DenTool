@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/api/admin";
 import type { AuthUser } from "@/types/admin";
+import { Button } from "@/components/ui/Button";
 
 const links = [
   { href: "/admin", label: "Dashboard" },
@@ -31,7 +32,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   if (isLogin) return <>{children}</>;
   if (!ready)
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-50 text-sm text-slate-500">
+      <div role="status" className="grid min-h-screen place-items-center bg-slate-50 px-5 text-center text-sm text-slate-500">
         Checking administrator session…
       </div>
     );
@@ -49,13 +50,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <Link
               key={link.href}
               href={link.href}
-              className={`block rounded-md px-3 py-2 text-sm font-medium ${pathname === link.href || (link.href !== "/admin" && pathname.startsWith(`${link.href}/`)) ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-100"}`}
+              aria-current={pathname === link.href || (link.href !== "/admin" && pathname.startsWith(`${link.href}/`)) ? "page" : undefined}
+              className={`block min-h-11 rounded-lg px-3 py-3 text-center text-sm font-semibold transition focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 md:py-2 md:text-left ${pathname === link.href || (link.href !== "/admin" && pathname.startsWith(`${link.href}/`)) ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
             >
               {link.label}
             </Link>
           ))}
         </nav>
-        <button
+        <Button
           type="button"
           onClick={async () => {
             try {
@@ -64,10 +66,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               router.replace("/admin/login");
             }
           }}
-          className="m-2 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-700 md:text-left"
+          variant="ghost"
+          className="m-2 min-h-11 text-sm text-slate-600 hover:bg-red-50 hover:text-red-700 md:text-left"
         >
           Logout
-        </button>
+        </Button>
       </aside>
       <main className="pb-20 md:ml-60 md:pb-0">
         <header className="flex min-h-16 items-center justify-between border-b border-slate-200 bg-white px-5 md:px-8">
@@ -76,7 +79,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </p>
           <span className="ml-auto text-sm text-slate-500">{user?.email}</span>
         </header>
-        <div className="mx-auto max-w-7xl p-5 md:p-8">{children}</div>
+        <div id="main-content" className="mx-auto max-w-7xl p-5 md:p-8">{children}</div>
       </main>
     </div>
   );
