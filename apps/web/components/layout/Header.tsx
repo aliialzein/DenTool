@@ -21,8 +21,16 @@ export function Header() {
   const router = useRouter();
 
   const cartItemCount = useAppSelector(
-    (state) => state.cart.items.length,
+    (state) =>
+      state.cart.items.reduce(
+        (total, item) => total + Math.max(1, item.quantity),
+        0,
+      ),
   );
+
+  const cartLabel = `${cartItemCount} ${
+    cartItemCount === 1 ? 'item' : 'items'
+  }`;
 
   function isActiveLink(href: string) {
     if (href === '/') {
@@ -129,15 +137,30 @@ export function Header() {
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search products"
-                className="h-11 w-52 rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100 xl:w-64"
+                className="h-11 w-52 rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100 xl:w-64"
               />
+
+              <button
+                type="submit"
+                aria-label="Submit product search"
+                className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-slate-500 transition hover:bg-blue-100 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              >
+                <SearchIcon aria-hidden="true" />
+              </button>
             </form>
 
             <Link
+              href="/admin/login"
+              aria-label="Administrator login"
+              title="Administrator login"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-slate-600 transition hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
+            >
+              <AccountIcon aria-hidden="true" />
+            </Link>
+
+            <Link
               href="/cart"
-              aria-label={`Shopping cart with ${cartItemCount} ${
-                cartItemCount === 1 ? 'item' : 'items'
-              }`}
+              aria-label={`Shopping cart with ${cartLabel}`}
               className="relative inline-flex h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-700 transition hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
             >
               <CartIcon aria-hidden="true" />
@@ -156,10 +179,16 @@ export function Header() {
 
           <div className="flex items-center gap-1 md:hidden">
             <Link
+              href="/admin/login"
+              aria-label="Administrator login"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-700 transition hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
+            >
+              <AccountIcon aria-hidden="true" />
+            </Link>
+
+            <Link
               href="/cart"
-              aria-label={`Shopping cart with ${cartItemCount} ${
-                cartItemCount === 1 ? 'item' : 'items'
-              }`}
+              aria-label={`Shopping cart with ${cartLabel}`}
               className="relative flex h-11 w-11 items-center justify-center rounded-lg text-slate-700 transition hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
             >
               <CartIcon aria-hidden="true" />
@@ -212,8 +241,16 @@ export function Header() {
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search products"
-                className="h-12 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                className="h-12 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-14 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100"
               />
+
+              <button
+                type="submit"
+                aria-label="Submit product search"
+                className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-slate-500 transition hover:bg-blue-100 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              >
+                <SearchIcon aria-hidden="true" />
+              </button>
             </form>
 
             <nav aria-label="Mobile navigation" className="grid gap-1">
@@ -328,6 +365,25 @@ function CloseIcon(props: React.SVGProps<SVGSVGElement>) {
       strokeLinecap="round"
     >
       <path d="m6 6 12 12M18 6 6 18" />
+    </svg>
+  );
+}
+
+function AccountIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M4.5 20c.8-3.3 3.3-5 7.5-5s6.7 1.7 7.5 5" />
     </svg>
   );
 }

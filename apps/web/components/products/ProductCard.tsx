@@ -31,6 +31,7 @@ export function ProductCard({
 }: ProductCardProps) {
   const dispatch = useAppDispatch();
   const [isAdded, setIsAdded] = useState(false);
+  const [hasImageError, setHasImageError] = useState(false);
 
   function handleAddToCart() {
     if (!product.isAvailable) {
@@ -54,13 +55,14 @@ export function ProductCard({
         aria-label={`View ${product.name}`}
       >
         <div className="relative aspect-[4/3] overflow-hidden bg-blue-50/60">
-          {product.image ? (
+          {product.image && !hasImageError ? (
             <Image
               src={product.image}
               alt={product.name}
               fill
               className="object-contain p-6 transition duration-300 group-hover:scale-105 sm:p-8"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              onError={() => setHasImageError(true)}
             />
           ) : (
             <ProductPlaceholder />

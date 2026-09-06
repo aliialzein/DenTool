@@ -53,7 +53,11 @@ const cartSlice = createSlice({
         return;
       }
 
-      item.quantity = Math.max(1, Math.floor(action.payload.quantity));
+      const quantity = Number.isFinite(action.payload.quantity)
+        ? Math.floor(action.payload.quantity)
+        : 1;
+
+      item.quantity = Math.max(1, quantity);
     },
 
     clearCart: (state) => {

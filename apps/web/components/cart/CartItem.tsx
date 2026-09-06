@@ -26,7 +26,7 @@ export function CartItem({
   const isMinimumQuantity = item.quantity <= 1;
 
   return (
-    <article className="flex gap-4 border-b border-blue-100 py-6 last:border-b-0 sm:gap-5">
+    <article className="grid gap-4 border-b border-blue-100 py-6 last:border-b-0 sm:grid-cols-[7rem_minmax(0,1fr)_auto] sm:gap-5">
       {/* Product image */}
       <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-blue-100 bg-blue-50 sm:h-28 sm:w-28">
         {item.image ? (
@@ -114,7 +114,7 @@ export function CartItem({
       </div>
 
       {/* Item subtotal */}
-      <div className="shrink-0 text-right">
+      <div className="text-left sm:shrink-0 sm:text-right">
         <p className="text-sm font-bold text-slate-950 sm:text-base">
           {formatPrice(item.price * item.quantity)}
         </p>

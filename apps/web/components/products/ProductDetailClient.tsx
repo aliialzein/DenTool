@@ -30,19 +30,15 @@ export function ProductDetailClient({
     [product.images],
   );
 
-  const [selectedImage, setSelectedImage] = useState(
-    galleryImages[0]?.secureUrl ?? '',
-  );
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
-
-  // useEffect(() => {
-  //   setSelectedImage(
-  //     galleryImages[0]?.secureUrl ?? '',
-  //   );
-  //   setQuantity(1);
-  //   setIsAdded(false);
-  // }, [galleryImages]);
+  const [failedImages, setFailedImages] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const selectedImage = galleryImages[selectedIndex]?.secureUrl ?? '';
+  const canShowSelectedImage =
+    Boolean(selectedImage) && !failedImages.has(selectedImage);
 
   const useCases = normalizeEntries(product.useCases);
   const specifications = normalizeEntries(
@@ -81,7 +77,7 @@ export function ProductDetailClient({
 
         <div className="mt-5 overflow-hidden rounded-2xl border border-blue-100 bg-blue-50/50">
           <div className="relative aspect-[4/3]">
-            {selectedImage ? (
+            {canShowSelectedImage ? (
               <Image
                 src={selectedImage}
                 alt={product.name}
@@ -89,9 +85,50 @@ export function ProductDetailClient({
                 priority
                 className="object-contain p-8 sm:p-12"
                 sizes="(max-width: 1024px) 100vw, 55vw"
+                onError={() =>
+                  setFailedImages((current) => {
+                    const next = new Set(current);
+                    next.add(selectedImage);
+                    return next;
+                  })
+                }
               />
             ) : (
               <ProductPlaceholder />
+            )}
+
+            {galleryImages.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Previous product image"
+                  onClick={() =>
+                    setSelectedIndex((current) =>
+                      current === 0
+                        ? galleryImages.length - 1
+                        : current - 1,
+                    )
+                  }
+                  className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/90 text-slate-700 shadow-sm transition hover:bg-white focus:outline-none focus:ring-4 focus:ring-blue-200"
+                >
+                  <ChevronIcon direction="left" aria-hidden="true" />
+                </button>
+
+                <button
+                  type="button"
+                  aria-label="Next product image"
+                  onClick={() =>
+                    setSelectedIndex((current) =>
+                      current === galleryImages.length - 1
+                        ? 0
+                        : current + 1,
+                    )
+                  }
+                  className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/90 text-slate-700 shadow-sm transition hover:bg-white focus:outline-none focus:ring-4 focus:ring-blue-200"
+                >
+                  <ChevronIcon direction="right" aria-hidden="true" />
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -99,11 +136,10 @@ export function ProductDetailClient({
         {galleryImages.length > 1 && (
           <div
             aria-label="Product images"
-            className="mt-4 grid grid-cols-4 gap-3 sm:grid-cols-5"
+            className="mt-4 flex gap-3 overflow-x-auto pb-2"
           >
             {galleryImages.map((image, index) => {
-              const isSelected =
-                selectedImage === image.secureUrl;
+              const isSelected = selectedIndex === index;
 
               return (
                 <button
@@ -113,10 +149,8 @@ export function ProductDetailClient({
                     index + 1
                   }`}
                   aria-pressed={isSelected}
-                  onClick={() =>
-                    setSelectedImage(image.secureUrl)
-                  }
-                  className={`relative aspect-square overflow-hidden rounded-xl border bg-blue-50/40 transition focus:outline-none focus:ring-4 focus:ring-blue-100 ${
+                  onClick={() => setSelectedIndex(index)}
+                  className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border bg-blue-50/40 transition focus:outline-none focus:ring-4 focus:ring-blue-100 sm:h-24 sm:w-24 ${
                     isSelected
                       ? 'border-blue-700 ring-2 ring-blue-200'
                       : 'border-blue-100 hover:border-blue-300'
@@ -128,6 +162,13 @@ export function ProductDetailClient({
                     fill
                     className="object-contain p-2"
                     sizes="(max-width: 640px) 22vw, 12vw"
+                    onError={() =>
+                      setFailedImages((current) => {
+                        const next = new Set(current);
+                        next.add(image.secureUrl);
+                        return next;
+                      })
+                    }
                   />
                 </button>
               );
@@ -362,6 +403,29 @@ function formatPrice(price: number) {
     style: 'currency',
     currency: 'USD',
   }).format(price);
+}
+
+function ChevronIcon({
+  direction,
+  ...props
+}: React.SVGProps<SVGSVGElement> & {
+  direction: 'left' | 'right';
+}) {
+  return (
+    <svg
+      {...props}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d={direction === 'left' ? 'm15 18-6-6 6-6' : 'm9 18 6-6-6-6'} />
+    </svg>
+  );
 }
 
 function ArrowLeftIcon(
