@@ -12,10 +12,16 @@ const cartSlice = createSlice({
   reducers: {
     addItem: (
       state,
-      action: PayloadAction<{ productId: string }>,
+      action: PayloadAction<{
+        productId: string;
+        selectedOptionValueIds?: string[];
+      }>,
     ) => {
       const existingItem = state.items.find(
-        (item) => item.productId === action.payload.productId,
+        (item) =>
+          item.productId === action.payload.productId &&
+          item.selectedOptionValueIds.join(',') ===
+            [...(action.payload.selectedOptionValueIds ?? [])].sort().join(','),
       );
 
       if (existingItem) {
@@ -26,15 +32,17 @@ const cartSlice = createSlice({
       state.items.push({
         productId: action.payload.productId,
         quantity: 1,
+        selectedOptionValueIds: [...(action.payload.selectedOptionValueIds ?? [])].sort(),
       });
     },
 
     removeItem: (
       state,
-      action: PayloadAction<string>,
+      action: PayloadAction<{ productId: string; selectedOptionValueIds?: string[] }>,
     ) => {
       state.items = state.items.filter(
-        (item) => item.productId !== action.payload,
+        (item) =>
+          !sameCartConfiguration(item, action.payload.productId, action.payload.selectedOptionValueIds),
       );
     },
 
@@ -42,11 +50,12 @@ const cartSlice = createSlice({
       state,
       action: PayloadAction<{
         productId: string;
+        selectedOptionValueIds?: string[];
         quantity: number;
       }>,
     ) => {
       const item = state.items.find(
-        (item) => item.productId === action.payload.productId,
+        (item) => sameCartConfiguration(item, action.payload.productId, action.payload.selectedOptionValueIds),
       );
 
       if (!item) {
@@ -65,6 +74,15 @@ const cartSlice = createSlice({
     },
   },
 });
+
+function sameCartConfiguration(
+  item: { productId: string; selectedOptionValueIds?: string[] },
+  productId: string,
+  selectedOptionValueIds: string[] = [],
+) {
+  return item.productId === productId &&
+    (item.selectedOptionValueIds ?? []).join(',') === [...selectedOptionValueIds].sort().join(',');
+}
 
 export const {
   addItem,

@@ -3,8 +3,10 @@ import type { SVGProps } from 'react';
 
 export interface CartItemData {
   productId: string;
+  selectedOptionValueIds: string[];
   name: string;
   price: number;
+  optionLabels: string[];
   image?: string;
   quantity: number;
 }
@@ -14,8 +16,9 @@ interface CartItemProps {
   onQuantityChange: (
     productId: string,
     quantity: number,
+    selectedOptionValueIds: string[],
   ) => void;
-  onRemove: (productId: string) => void;
+  onRemove: (productId: string, selectedOptionValueIds: string[]) => void;
 }
 
 export function CartItem({
@@ -58,6 +61,12 @@ export function CartItem({
           {formatPrice(item.price)} each
         </p>
 
+        {item.optionLabels.length > 0 && (
+          <p className="mt-1 text-xs font-semibold text-blue-700">
+            {item.optionLabels.join(' · ')}
+          </p>
+        )}
+
         <div className="mt-4 flex flex-wrap items-center gap-3">
           {/* Quantity control */}
           <div
@@ -72,6 +81,7 @@ export function CartItem({
                 onQuantityChange(
                   item.productId,
                   Math.max(1, item.quantity - 1),
+                  item.selectedOptionValueIds,
                 )
               }
               aria-label={`Decrease quantity of ${item.name}`}
@@ -93,6 +103,7 @@ export function CartItem({
                 onQuantityChange(
                   item.productId,
                   item.quantity + 1,
+                  item.selectedOptionValueIds,
                 )
               }
               aria-label={`Increase quantity of ${item.name}`}
@@ -104,7 +115,7 @@ export function CartItem({
 
           <button
             type="button"
-            onClick={() => onRemove(item.productId)}
+            onClick={() => onRemove(item.productId, item.selectedOptionValueIds)}
             aria-label={`Remove ${item.name} from cart`}
             className="inline-flex min-h-10 items-center rounded-lg px-2 text-sm font-semibold text-slate-500 transition hover:bg-red-50 hover:text-red-700 focus:outline-none focus:ring-4 focus:ring-red-100"
           >

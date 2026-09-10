@@ -140,12 +140,18 @@ export default function CartPage() {
       const primaryImage = [...images].sort(
         (a, b) => a.sortOrder - b.sortOrder,
       )[0];
+      const selectedValues = (product.optionGroups ?? []).flatMap((group) =>
+        group.values.filter((value) => (cartItem.selectedOptionValueIds ?? []).includes(value.id)),
+      );
+      const basePrice = product.isOnSale && product.salePrice != null ? product.salePrice : product.price;
 
       return [
         {
           productId: product.id,
+          selectedOptionValueIds: cartItem.selectedOptionValueIds ?? [],
           name: product.name,
-          price: Number(product.price),
+          price: basePrice + selectedValues.reduce((total, value) => total + value.priceAdjustment, 0),
+          optionLabels: selectedValues.map((value) => value.label),
           image: primaryImage?.secureUrl,
           quantity: cartItem.quantity,
         } satisfies CartItemData,
@@ -171,17 +177,19 @@ export default function CartPage() {
   function handleQuantityChange(
     productId: string,
     quantity: number,
+    selectedOptionValueIds: string[] = [],
   ) {
     dispatch(
       updateQuantity({
         productId,
+        selectedOptionValueIds,
         quantity,
       }),
     );
   }
 
-  function handleRemove(productId: string) {
-    dispatch(removeItem(productId));
+  function handleRemove(productId: string, selectedOptionValueIds: string[] = []) {
+    dispatch(removeItem({ productId, selectedOptionValueIds }));
   }
 
   async function handleContinueToWhatsApp() {
@@ -192,6 +200,7 @@ export default function CartPage() {
       const items = cartItems.map((cartItem) => ({
         productId: cartItem.productId,
         quantity: cartItem.quantity,
+        selectedOptionValueIds: cartItem.selectedOptionValueIds ?? [],
       }));
 
       const { whatsappUrl } =
@@ -294,7 +303,7 @@ export default function CartPage() {
                   {cartItemsData.length > 0 ? (
                     cartItemsData.map((item) => (
                       <CartItem
-                        key={item.productId}
+                        key={`${item.productId}:${item.selectedOptionValueIds.join(',')}`}
                         item={item}
                         onQuantityChange={
                           handleQuantityChange
