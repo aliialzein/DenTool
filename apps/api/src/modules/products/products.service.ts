@@ -21,6 +21,7 @@ import {
   PRODUCT_CACHE_TTL_SECONDS,
 } from './products.cache';
 import { ProductResponse } from './products.types';
+import { ProductOptionGroupDto } from './dto/create-product.dto';
 
 @Injectable()
 export class ProductsService {
@@ -40,7 +41,7 @@ export class ProductsService {
     return {
       items: result.items.map((product) => ({
         ...product,
-        price: Number(product.price),
+        ...this.normalizeProduct(product),
       })),
 
       pagination: {
@@ -58,7 +59,7 @@ export class ProductsService {
     return {
       items: result.items.map((product) => ({
         ...product,
-        price: Number(product.price),
+        ...this.normalizeProduct(product),
       })),
       pagination: {
         page: query.page,
@@ -80,7 +81,7 @@ export class ProductsService {
 
     return products.map((product) => ({
       ...product,
-      price: Number(product.price),
+      ...this.normalizeProduct(product),
     }));
   }
 
@@ -96,12 +97,12 @@ export class ProductsService {
 
     return {
       ...product,
-      price: Number(product.price),
+      ...this.normalizeProduct(product),
     };
   }
 
   async findByIdAdmin(id: string) {
-    const product = await this.productsRepository.findById(id);
+    const product = await this.productsRepository.findByIdAdmin(id);
 
     if (!product) {
       throw new NotFoundException({
@@ -110,7 +111,7 @@ export class ProductsService {
       });
     }
 
-    return { ...product, price: Number(product.price) };
+    return this.normalizeProduct(product);
   }
 
   async findBySlug(slug: string): Promise<ProductResponse> {
@@ -132,10 +133,7 @@ export class ProductsService {
       });
     }
 
-    const result: ProductResponse = {
-      ...product,
-      price: Number(product.price),
-    };
+    const result: ProductResponse = this.normalizeProduct(product);
 
     await this.cacheService.set(cacheKey, result, PRODUCT_CACHE_TTL_SECONDS);
 
@@ -143,6 +141,7 @@ export class ProductsService {
   }
 
   async create(data: CreateProductDto) {
+    this.validateSale(data.price, data.salePrice, data.isOnSale);
     const existingProduct = await this.productsRepository.findBySlug(data.slug);
 
     if (existingProduct) {
@@ -157,6 +156,8 @@ export class ProductsService {
       slug: data.slug,
       description: data.description,
       price: data.price,
+      salePrice: data.isOnSale ? data.salePrice : null,
+      isOnSale: data.isOnSale,
       stockQuantity: data.stockQuantity,
       isAvailable: data.isAvailable,
       isActive: data.isActive,
@@ -166,6 +167,9 @@ export class ProductsService {
         connect: {
           id: data.categoryId,
         },
+      },
+      optionGroups: {
+        create: this.buildOptionGroups(data.optionGroups),
       },
     };
 
@@ -195,6 +199,16 @@ export class ProductsService {
       }
     }
 
+    this.validateSale(
+      data.price ?? Number(product.price),
+      data.salePrice === undefined
+        ? product.salePrice === null
+          ? undefined
+          : Number(product.salePrice)
+        : (data.salePrice ?? undefined),
+      data.isOnSale ?? product.isOnSale,
+    );
+
     const productData: Prisma.ProductUpdateInput = {
       ...(data.name !== undefined && {
         name: data.name,
@@ -210,6 +224,15 @@ export class ProductsService {
 
       ...(data.price !== undefined && {
         price: data.price,
+      }),
+
+      ...(data.salePrice !== undefined && {
+        salePrice: data.isOnSale === false ? null : data.salePrice,
+      }),
+
+      ...(data.isOnSale !== undefined && {
+        isOnSale: data.isOnSale,
+        ...(data.isOnSale === false && { salePrice: null }),
       }),
 
       ...(data.stockQuantity !== undefined && {
@@ -239,6 +262,13 @@ export class ProductsService {
           },
         },
       }),
+
+      ...(data.optionGroups !== undefined && {
+        optionGroups: {
+          deleteMany: {},
+          create: this.buildOptionGroups(data.optionGroups),
+        },
+      }),
     };
 
     const updatedProduct = await this.productsRepository.update(
@@ -249,6 +279,73 @@ export class ProductsService {
     await this.cacheService.delete(getProductBySlugCacheKey(product.slug));
 
     return updatedProduct;
+  }
+
+  private validateSale(
+    price: number,
+    salePrice: number | null | undefined,
+    isOnSale: boolean,
+  ) {
+    if (salePrice !== undefined && salePrice !== null && salePrice >= price) {
+      throw new BadRequestException({
+        code: 'INVALID_SALE_PRICE',
+        message: 'Sale price must be lower than the regular price.',
+      });
+    }
+
+    if (isOnSale && (salePrice === undefined || salePrice === null)) {
+      throw new BadRequestException({
+        code: 'SALE_PRICE_REQUIRED',
+        message: 'An active sale requires a sale price.',
+      });
+    }
+  }
+
+  private buildOptionGroups(groups: ProductOptionGroupDto[]) {
+    return groups.map((group, groupIndex) => ({
+      name: group.name.trim(),
+      isRequired: group.isRequired,
+      isActive: group.isActive,
+      sortOrder: groupIndex,
+      values: {
+        create: group.values.map((value, valueIndex) => ({
+          label: value.label.trim(),
+          priceAdjustment: value.priceAdjustment,
+          colorHex: value.colorHex,
+          isActive: value.isActive,
+          sortOrder: valueIndex,
+        })),
+      },
+    }));
+  }
+
+  private normalizeProduct<T extends { price: unknown; salePrice?: unknown }>(
+    product: T,
+  ) {
+    return {
+      ...product,
+      price: Number(product.price),
+      salePrice:
+        product.salePrice === null || product.salePrice === undefined
+          ? product.salePrice
+          : Number(product.salePrice),
+      optionGroups:
+        'optionGroups' in product
+          ? (
+              product as T & {
+                optionGroups: Array<{
+                  values: Array<{ priceAdjustment: unknown }>;
+                }>;
+              }
+            ).optionGroups.map((group) => ({
+              ...group,
+              values: group.values.map((value) => ({
+                ...value,
+                priceAdjustment: Number(value.priceAdjustment),
+              })),
+            }))
+          : undefined,
+    };
   }
 
   async delete(id: string) {

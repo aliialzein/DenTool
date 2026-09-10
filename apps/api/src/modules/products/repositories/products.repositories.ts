@@ -34,8 +34,43 @@ export type ProductWithRelations = Prisma.ProductGetPayload<{
         sortOrder: 'asc';
       };
     };
+    optionGroups: {
+      where: { isActive: true };
+      orderBy: { sortOrder: 'asc' };
+      include: {
+        values: {
+          where: { isActive: true };
+          orderBy: { sortOrder: 'asc' };
+        };
+      };
+    };
   };
 }>;
+
+const productRelations = {
+  category: { select: { id: true, name: true, slug: true } },
+  images: { orderBy: { sortOrder: 'asc' as const } },
+  optionGroups: {
+    where: { isActive: true },
+    orderBy: { sortOrder: 'asc' as const },
+    include: {
+      values: {
+        where: { isActive: true },
+        orderBy: { sortOrder: 'asc' as const },
+      },
+    },
+  },
+} as const;
+
+const productAdminRelations = {
+  ...productRelations,
+  optionGroups: {
+    orderBy: { sortOrder: 'asc' as const },
+    include: {
+      values: { orderBy: { sortOrder: 'asc' as const } },
+    },
+  },
+} as const;
 
 @Injectable()
 export class ProductsRepository {
@@ -44,20 +79,14 @@ export class ProductsRepository {
   async findById(id: string): Promise<ProductWithRelations | null> {
     return this.prisma.product.findUnique({
       where: { id },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-        images: {
-          orderBy: {
-            sortOrder: 'asc',
-          },
-        },
-      },
+      include: productRelations,
+    });
+  }
+
+  async findByIdAdmin(id: string): Promise<ProductWithRelations | null> {
+    return this.prisma.product.findUnique({
+      where: { id },
+      include: productAdminRelations,
     });
   }
 
@@ -71,40 +100,14 @@ export class ProductsRepository {
         id: { in: ids },
         isActive: true,
       },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-        images: {
-          orderBy: {
-            sortOrder: 'asc',
-          },
-        },
-      },
+      include: productRelations,
     });
   }
 
   async findBySlug(slug: string): Promise<ProductWithRelations | null> {
     return this.prisma.product.findUnique({
       where: { slug },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-        images: {
-          orderBy: {
-            sortOrder: 'asc',
-          },
-        },
-      },
+      include: productRelations,
     });
   }
 
@@ -187,20 +190,7 @@ export class ProductsRepository {
         orderBy,
         skip,
         take: limit,
-        include: {
-          category: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            },
-          },
-          images: {
-            orderBy: {
-              sortOrder: 'asc',
-            },
-          },
-        },
+        include: productRelations,
       }),
 
       this.prisma.product.count({

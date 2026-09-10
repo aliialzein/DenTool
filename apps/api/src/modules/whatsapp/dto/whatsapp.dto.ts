@@ -3,18 +3,22 @@ import {
   ArrayMinSize,
   IsArray,
   IsInt,
-  IsString,
+  IsUUID,
   Min,
   ValidateNested,
 } from 'class-validator';
 
 export class WhatsAppItemDto {
-  @IsString()
+  @IsUUID()
   productId!: string;
 
   @IsInt()
   @Min(1)
   quantity!: number;
+
+  @IsArray()
+  @IsUUID('4', { each: true })
+  selectedOptionValueIds!: string[];
 }
 
 export class CreateWhatsAppPurchaseRequestDto {

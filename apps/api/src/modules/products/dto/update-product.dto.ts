@@ -7,7 +7,11 @@ import {
   IsString,
   IsUUID,
   Min,
+  IsArray,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ProductOptionGroupDto } from './create-product.dto';
 
 export class UpdateProductDto {
   @IsOptional()
@@ -36,6 +40,15 @@ export class UpdateProductDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  salePrice?: number | null;
+
+  @IsOptional()
+  @IsBoolean()
+  isOnSale?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
   stockQuantity?: number;
 
   @IsOptional()
@@ -53,4 +66,10 @@ export class UpdateProductDto {
   @IsOptional()
   @IsObject()
   specifications?: Record<string, unknown>;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductOptionGroupDto)
+  optionGroups?: ProductOptionGroupDto[];
 }

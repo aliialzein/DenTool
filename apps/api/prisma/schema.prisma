@@ -73,6 +73,8 @@ model Product {
   slug           String         @unique
   description    String
   price          Decimal        @db.Decimal(10, 2)
+  salePrice      Decimal?       @db.Decimal(10, 2)
+  isOnSale       Boolean        @default(false)
   stockQuantity  Int
   isAvailable    Boolean        @default(true)
   isActive       Boolean        @default(true)
@@ -82,6 +84,7 @@ model Product {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   images         ProductImage[]
+  optionGroups   ProductOptionGroup[]
   category       Category       @relation(fields: [categoryId], references: [id])
 
   @@index([categoryId])
@@ -89,6 +92,34 @@ model Product {
   @@index([isAvailable])
   @@index([categoryId, isActive])
   @@map("products")
+}
+
+model ProductOptionGroup {
+  id          String              @id @default(uuid()) @db.Uuid
+  name        String
+  isRequired  Boolean             @default(false)
+  isActive    Boolean             @default(true)
+  sortOrder   Int                 @default(0)
+  productId   String              @db.Uuid
+  product     Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  values      ProductOptionValue[]
+
+  @@index([productId])
+  @@map("product_option_groups")
+}
+
+model ProductOptionValue {
+  id             String             @id @default(uuid()) @db.Uuid
+  label          String
+  priceAdjustment Decimal            @db.Decimal(10, 2)
+  colorHex       String?
+  isActive       Boolean            @default(true)
+  sortOrder      Int                @default(0)
+  groupId        String             @db.Uuid
+  group          ProductOptionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@map("product_option_values")
 }
 
 model ProductImage {
