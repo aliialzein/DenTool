@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { adminApi, uploadToImageKit } from "@/lib/api/admin";
 import { ImageUploader } from "./ImageUploader";
-import type { Category, Product } from "@/types/admin";
+import type { Category, Product, ProductOptionGroupInput } from "@/types/admin";
 import Image from "next/image";
 type Values = {
   categoryId: string;
@@ -11,11 +11,14 @@ type Values = {
   slug: string;
   description: string;
   price: string;
+  salePrice: string;
+  isOnSale: boolean;
   stockQuantity: string;
   isAvailable: boolean;
   isActive: boolean;
   useCases: string[];
   specifications: Array<{ key: string; value: string }>;
+  optionGroups: ProductOptionGroupInput[];
 };
 const empty: Values = {
   categoryId: "",
@@ -23,11 +26,14 @@ const empty: Values = {
   slug: "",
   description: "",
   price: "0",
+  salePrice: "",
+  isOnSale: false,
   stockQuantity: "0",
   isAvailable: true,
   isActive: true,
   useCases: [],
   specifications: [],
+  optionGroups: [],
 };
 export function ProductForm({ product }: { product?: Product }) {
   const router = useRouter();
@@ -43,11 +49,14 @@ export function ProductForm({ product }: { product?: Product }) {
           slug: product.slug,
           description: product.description,
           price: String(product.price),
+          salePrice: product.salePrice == null ? "" : String(product.salePrice),
+          isOnSale: product.isOnSale,
           stockQuantity: String(product.stockQuantity),
           isAvailable: product.isAvailable,
           isActive: product.isActive,
           useCases: parseUseCases(product.useCases),
           specifications: parseSpecifications(product.specifications),
+          optionGroups: product.optionGroups ?? [],
         }
       : empty,
   );
@@ -59,7 +68,7 @@ export function ProductForm({ product }: { product?: Product }) {
       .then(setCategories)
       .catch(() => setError("Unable to load categories."));
   }, []);
-  const change = (key: keyof Values, value: string | boolean | Values["useCases"] | Values["specifications"]) =>
+  const change = (key: keyof Values, value: string | boolean | Values["useCases"] | Values["specifications"] | Values["optionGroups"]) =>
     setValues((state) => ({ ...state, [key]: value }));
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -84,6 +93,7 @@ export function ProductForm({ product }: { product?: Product }) {
       return;
     }
     const price = Number(values.price),
+      salePrice = values.salePrice === "" ? null : Number(values.salePrice),
       stockQuantity = Number(values.stockQuantity);
     if (
       !values.categoryId ||
@@ -92,6 +102,7 @@ export function ProductForm({ product }: { product?: Product }) {
       !values.description.trim() ||
       !Number.isFinite(price) ||
       price < 0 ||
+      (values.isOnSale && (salePrice === null || !Number.isFinite(salePrice) || salePrice < 0 || salePrice >= price)) ||
       !Number.isInteger(stockQuantity) ||
       stockQuantity < 0
     ) {
@@ -108,11 +119,14 @@ export function ProductForm({ product }: { product?: Product }) {
         slug: values.slug.trim(),
         description: values.description.trim(),
         price,
+        salePrice,
+        isOnSale: values.isOnSale,
         stockQuantity,
         isAvailable: values.isAvailable,
         isActive: values.isActive,
         useCases: { useCases },
         specifications,
+        optionGroups: values.optionGroups,
       };
       const saved = product
         ? await adminApi.updateProduct(product.id, input)
@@ -169,12 +183,20 @@ export function ProductForm({ product }: { product?: Product }) {
           </select>
         </label>
         <Field
-          label="Price"
+          label="Regular price"
           type="number"
           min="0"
           step="0.01"
           value={values.price}
           onChange={(value) => change("price", value)}
+        />
+        <Field
+          label="Sale price"
+          type="number"
+          min="0"
+          step="0.01"
+          value={values.salePrice}
+          onChange={(value) => change("salePrice", value)}
         />
         <Field
           label="Stock quantity"
@@ -201,6 +223,15 @@ export function ProductForm({ product }: { product?: Product }) {
         values={values.specifications}
         onChange={(next) => change("specifications", next)}
       />
+      <Check
+        label="On sale"
+        checked={values.isOnSale}
+        onChange={(checked) => change("isOnSale", checked)}
+      />
+      <OptionGroupsEditor
+        values={values.optionGroups}
+        onChange={(optionGroups) => change("optionGroups", optionGroups)}
+      />
       <div className="flex flex-wrap gap-5">
         <Check
           label="Available for purchase"
@@ -222,7 +253,7 @@ export function ProductForm({ product }: { product?: Product }) {
           <div className="flex flex-wrap gap-3">
             {images.map((image, index) => (
               <div key={image.id} className="flex flex-col gap-1">
-                <Image src={image.secureUrl} alt={`Product image ${index + 1}`} className="h-20 w-20 rounded border object-cover" />
+                <Image src={image.secureUrl} alt={`Product image ${index + 1}`} width={48} height={48} className="h-20 w-20 rounded border object-cover" />
                 <div className="flex gap-1 text-xs">
                   <button type="button" disabled={index === 0} onClick={() => moveImage(index, -1)} className="rounded border px-1 disabled:opacity-40">Left</button>
                   <button type="button" disabled={index === images.length - 1} onClick={() => moveImage(index, 1)} className="rounded border px-1 disabled:opacity-40">Right</button>
@@ -389,4 +420,41 @@ function Check({
       {label}
     </label>
   );
+}
+
+function OptionGroupsEditor({
+  values,
+  onChange,
+}: {
+  values: ProductOptionGroupInput[];
+  onChange: (values: ProductOptionGroupInput[]) => void;
+}) {
+  return (
+    <section className="space-y-3 border-t border-slate-200 pt-5">
+      <h2 className="text-sm font-semibold">Options</h2>
+      {values.map((group, groupIndex) => (
+        <div key={groupIndex} className="space-y-2 rounded-lg border border-slate-200 p-3">
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+            <input value={group.name} onChange={(event) => onChange(values.map((item, index) => index === groupIndex ? { ...item, name: event.target.value } : item))} className="rounded-md border p-2.5 text-sm" placeholder="Option group name" />
+            <Check label="Required" checked={group.isRequired} onChange={(checked) => onChange(values.map((item, index) => index === groupIndex ? { ...item, isRequired: checked } : item))} />
+            <button type="button" onClick={() => onChange(values.filter((_, index) => index !== groupIndex))} className="text-sm text-red-700">Remove</button>
+          </div>
+          {group.values.map((value, valueIndex) => (
+            <div key={valueIndex} className="grid gap-2 sm:grid-cols-[1fr_9rem_9rem_auto]">
+              <input value={value.label} onChange={(event) => onChange(updateOptionValue(values, groupIndex, valueIndex, { label: event.target.value }))} className="rounded-md border p-2.5 text-sm" placeholder="Value" />
+              <input type="number" step="0.01" value={value.priceAdjustment} onChange={(event) => onChange(updateOptionValue(values, groupIndex, valueIndex, { priceAdjustment: Number(event.target.value) }))} className="rounded-md border p-2.5 text-sm" placeholder="Adjustment" />
+              <input value={value.colorHex ?? ""} onChange={(event) => onChange(updateOptionValue(values, groupIndex, valueIndex, { colorHex: event.target.value }))} className="rounded-md border p-2.5 text-sm" placeholder="Color #hex" />
+              <button type="button" onClick={() => onChange(values.map((item, index) => index === groupIndex ? { ...item, values: item.values.filter((_, valueIndexToRemove) => valueIndexToRemove !== valueIndex) } : item))} className="text-sm text-red-700">Remove</button>
+            </div>
+          ))}
+          <button type="button" onClick={() => onChange(values.map((item, index) => index === groupIndex ? { ...item, values: [...item.values, { label: "", priceAdjustment: 0, isActive: true }] } : item))} className="text-sm font-semibold text-blue-700">+ Add value</button>
+        </div>
+      ))}
+      <button type="button" onClick={() => onChange([...values, { name: "", isRequired: false, isActive: true, values: [] }])} className="text-sm font-semibold text-blue-700">+ Add option group</button>
+    </section>
+  );
+}
+
+function updateOptionValue(values: ProductOptionGroupInput[], groupIndex: number, valueIndex: number, update: Partial<ProductOptionGroupInput["values"][number]>) {
+  return values.map((group, index) => index === groupIndex ? { ...group, values: group.values.map((value, optionIndex) => optionIndex === valueIndex ? { ...value, ...update } : value) } : group);
 }

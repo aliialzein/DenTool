@@ -224,6 +224,8 @@ export function ProductsPageClient() {
                           <Image
                             src={product.images[0].secureUrl}
                             alt=""
+                            width={36}
+                            height={36}
                             className="h-9 w-9 rounded object-cover"
                           />
                         ) : (
@@ -265,7 +267,7 @@ export function ProductsPageClient() {
             {data.items.map((product) => (
               <article key={product.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex items-start gap-3">
-                  {product.images[0] ? <Image src={product.images[0].secureUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" /> : <span className="h-12 w-12 shrink-0 rounded-lg bg-slate-100" />}
+                  {product.images[0] ? <Image src={product.images[0].secureUrl} width={48} height={48} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" /> : <span className="h-12 w-12 shrink-0 rounded-lg bg-slate-100" />}
                   <div className="min-w-0 flex-1">
                     <h2 className="font-semibold text-slate-950">{product.name}</h2>
                     <p className="mt-1 text-sm text-slate-500">{product.category?.name ?? "Uncategorized"}</p>
@@ -401,6 +403,8 @@ export function CategoriesPageClient() {
                         <Image
                           src={category.imageUrl}
                           alt=""
+                          width={36}
+                          height={36}
                           className="h-9 w-9 rounded object-cover"
                         />
                       ) : (
@@ -447,7 +451,10 @@ export function CategoriesPageClient() {
           {filteredItems?.map((category) => (
             <article key={category.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex items-start gap-3">
-                {category.imageUrl ? <Image src={category.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" /> : <span className="h-12 w-12 shrink-0 rounded-lg bg-slate-100" />}
+                {category.imageUrl ? 
+                <Image src={category.imageUrl} alt="" width={48} height={48} 
+                className="h-12 w-12 shrink-0 rounded-lg object-cover" /> 
+                : <span className="h-12 w-12 shrink-0 rounded-lg bg-slate-100" />}
                 <div className="min-w-0 flex-1">
                   <h2 className="font-semibold text-slate-950">{category.name}</h2>
                   <p className="mt-1 text-sm text-slate-500">/{category.slug}</p>

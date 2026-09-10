@@ -32,6 +32,7 @@ export function ProductDetailClient({
 
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [selectedOptionValueIds, setSelectedOptionValueIds] = useState<string[]>([]);
   const [isAdded, setIsAdded] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(
     () => new Set(),
@@ -44,9 +45,27 @@ export function ProductDetailClient({
   const specifications = normalizeEntries(
     product.specifications,
   );
+  const optionGroups = product.optionGroups ?? [];
+  const selectedValues = optionGroups.flatMap((group) =>
+    group.values.filter((value) => selectedOptionValueIds.includes(value.id)),
+  );
+  const basePrice = product.isOnSale && product.salePrice != null
+    ? product.salePrice
+    : product.price;
+  const displayedPrice = basePrice + selectedValues.reduce(
+    (total, value) => total + value.priceAdjustment,
+    0,
+  );
+  const missingRequiredOption = optionGroups.some(
+    (group) => group.isRequired && !selectedValues.some((value) => group.values.some((item) => item.id === value.id)),
+  );
 
   function handleAddToCart() {
     if (!product.isAvailable) {
+      return;
+    }
+
+    if (missingRequiredOption) {
       return;
     }
 
@@ -54,6 +73,7 @@ export function ProductDetailClient({
       dispatch(
         addItem({
           productId: product.id,
+          selectedOptionValueIds,
         }),
       );
     }
@@ -193,8 +213,14 @@ export function ProductDetailClient({
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <span className="text-3xl font-bold tracking-tight text-slate-950">
-            {formatPrice(Number(product.price))}
+            {formatPrice(displayedPrice)}
           </span>
+
+          {product.isOnSale && product.salePrice != null && (
+            <span className="text-base text-slate-400 line-through">
+              {formatPrice(product.price)}
+            </span>
+          )}
 
           <span
             className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold ${
@@ -221,6 +247,48 @@ export function ProductDetailClient({
           <p className="mt-6 text-base leading-7 text-slate-600">
             {product.description}
           </p>
+        )}
+
+        {optionGroups.length > 0 && (
+          <div className="mt-8 space-y-6">
+            {optionGroups.map((group) => (
+              <fieldset key={group.id}>
+                <legend className="text-sm font-bold text-slate-950">
+                  {group.name}
+                  {group.isRequired && <span className="ml-1 text-rose-600">*</span>}
+                </legend>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {group.values.map((value) => {
+                    const selected = selectedOptionValueIds.includes(value.id);
+                    return (
+                      <label
+                        key={value.id}
+                        className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm transition ${selected ? 'border-blue-700 bg-blue-50 ring-2 ring-blue-100' : 'border-slate-200 hover:border-blue-300'}`}
+                      >
+                        <input
+                          type="radio"
+                          name={group.id}
+                          checked={selected}
+                          onChange={() => setSelectedOptionValueIds((current) => [
+                            ...current.filter((id) => !group.values.some((item) => item.id === id)),
+                            value.id,
+                          ])}
+                          className="h-4 w-4 accent-blue-700"
+                        />
+                        {value.colorHex && (
+                          <span aria-hidden="true" className="h-5 w-5 rounded-full border border-slate-300" style={{ backgroundColor: value.colorHex }} />
+                        )}
+                        <span className="font-semibold text-slate-800">{value.label}</span>
+                        <span className="ml-auto text-xs text-slate-500">
+                          {value.priceAdjustment >= 0 ? '+' : ''}{formatPrice(value.priceAdjustment)}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            ))}
+          </div>
         )}
 
         <div className="mt-8 rounded-2xl border border-blue-100 bg-blue-50/50 p-4 sm:p-5">
@@ -267,7 +335,7 @@ export function ProductDetailClient({
               size="lg"
               variant="primary"
               className="flex-1"
-              disabled={!product.isAvailable}
+              disabled={!product.isAvailable || missingRequiredOption}
               onClick={handleAddToCart}
             >
               {isAdded ? 'Added to cart' : 'Add to cart'}

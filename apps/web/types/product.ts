@@ -11,6 +11,22 @@ export interface ProductCategory {
   slug: string;
 }
 
+export interface ProductOptionValue {
+  id: string;
+  label: string;
+  priceAdjustment: number;
+  colorHex?: string | null;
+  isActive: boolean;
+}
+
+export interface ProductOptionGroup {
+  id: string;
+  name: string;
+  isRequired: boolean;
+  isActive: boolean;
+  values: ProductOptionValue[];
+}
+
 export interface Product {
   id: string;
   categoryId: string;
@@ -18,6 +34,8 @@ export interface Product {
   slug: string;
   description: string;
   price: number;
+  salePrice?: number | null;
+  isOnSale: boolean;
   stockQuantity: number;
   isAvailable: boolean;
   isActive: boolean;
@@ -25,6 +43,7 @@ export interface Product {
   specifications: unknown;
   category?: ProductCategory;
   images: ProductImage[];
+  optionGroups?: ProductOptionGroup[];
   createdAt: string;
   updatedAt: string;
 }

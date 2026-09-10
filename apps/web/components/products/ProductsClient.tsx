@@ -338,6 +338,9 @@ function mapProductToCardData(
     name: product.name,
     slug: product.slug,
     price: Number(product.price),
+    salePrice: product.salePrice == null ? null : Number(product.salePrice),
+    isOnSale: product.isOnSale,
+    hasOptions: (product.optionGroups ?? []).length > 0,
     image: primaryImage?.secureUrl,
     isAvailable: product.isAvailable,
     category: product.category

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import { addItem } from '@/lib/store/cartSlice';
 import { useAppDispatch } from '@/lib/store/hooks';
@@ -13,6 +14,8 @@ export interface ProductCardData {
   name: string;
   slug: string;
   price: number;
+  salePrice?: number | null;
+  isOnSale?: boolean;
   category?: {
     id: string;
     name: string;
@@ -20,6 +23,7 @@ export interface ProductCardData {
   };
   image?: string;
   isAvailable: boolean;
+  hasOptions?: boolean;
 }
 
 interface ProductCardProps {
@@ -30,11 +34,17 @@ export function ProductCard({
   product,
 }: ProductCardProps) {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const [isAdded, setIsAdded] = useState(false);
   const [hasImageError, setHasImageError] = useState(false);
 
   function handleAddToCart() {
     if (!product.isAvailable) {
+      return;
+    }
+
+    if (product.hasOptions) {
+      router.push(`/products/${product.slug}`);
       return;
     }
 
@@ -111,9 +121,21 @@ export function ProductCard({
               Price
             </p>
 
-            <p className="mt-1 text-xl font-bold tracking-tight text-slate-950">
-              {formatPrice(product.price)}
-            </p>
+            <div className="mt-1 flex items-baseline gap-2">
+              <p className="text-xl font-bold tracking-tight text-slate-950">
+                {formatPrice(product.isOnSale && product.salePrice != null ? product.salePrice : product.price)}
+              </p>
+              {product.isOnSale && product.salePrice != null && (
+                <p className="text-sm text-slate-400 line-through">
+                  {formatPrice(product.price)}
+                </p>
+              )}
+            </div>
+            {product.isOnSale && product.salePrice != null && (
+              <span className="mt-1 inline-flex text-[11px] font-bold uppercase tracking-[0.12em] text-rose-600">
+                Sale
+              </span>
+            )}
           </div>
 
           <Button
@@ -128,7 +150,7 @@ export function ProductCard({
             }
             onClick={handleAddToCart}
           >
-            {isAdded ? 'Added' : 'Add to cart'}
+            {product.hasOptions ? 'Choose options' : isAdded ? 'Added' : 'Add to cart'}
           </Button>
         </div>
 

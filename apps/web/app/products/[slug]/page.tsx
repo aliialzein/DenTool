@@ -1,16 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Inter } from 'next/font/google';
 
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ProductDetailClient } from '@/components/products/ProductDetailClient';
 import { getProductBySlug } from '@/lib/api/products';
-
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-});
 
 interface ProductPageProps {
   params: Promise<{
@@ -45,7 +39,7 @@ export default async function ProductPage({
   }
 
   return (
-    <div className={`${inter.className} min-h-screen bg-white text-slate-950`}>
+    <div className="min-h-screen bg-white text-slate-950">
       <Header />
 
       <main id="main-content">

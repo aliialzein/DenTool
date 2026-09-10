@@ -27,11 +27,26 @@ export interface ProductInput {
   slug: string;
   description: string;
   price: number;
+  salePrice?: number | null;
+  isOnSale: boolean;
   stockQuantity: number;
   isAvailable: boolean;
   isActive: boolean;
   useCases: Record<string, unknown>;
   specifications: Record<string, unknown>;
+  optionGroups: ProductOptionGroupInput[];
+}
+export interface ProductOptionValueInput {
+  label: string;
+  priceAdjustment: number;
+  colorHex?: string | null;
+  isActive: boolean;
+}
+export interface ProductOptionGroupInput {
+  name: string;
+  isRequired: boolean;
+  isActive: boolean;
+  values: ProductOptionValueInput[];
 }
 export type ProductUpdateInput = Partial<ProductInput>;
 export interface CategoryInput {
