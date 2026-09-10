@@ -9,7 +9,7 @@ import { useAppSelector } from '@/lib/store/hooks';
 const navigation = [
   { label: 'Home', href: '/' },
   { label: 'Products', href: '/products' },
-  { label: 'About DenTool', href: '/about' },
+  { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ];
 
@@ -21,11 +21,7 @@ export function Header() {
   const router = useRouter();
 
   const cartItemCount = useAppSelector(
-    (state) =>
-      state.cart.items.reduce(
-        (total, item) => total + Math.max(1, item.quantity),
-        0,
-      ),
+    (state) => state.cart.items.length,
   );
 
   const cartLabel = `${cartItemCount} ${

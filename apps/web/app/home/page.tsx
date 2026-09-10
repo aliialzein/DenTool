@@ -133,14 +133,14 @@ export function HomePage({
             </ul>
           </div>
 
-          <div className="relative min-h-[360px] overflow-hidden rounded-2xl border border-blue-100 bg-blue-100 shadow-sm sm:min-h-[480px]">
+          <div className="relative min-h-[360px] overflow-hidden rounded-2xl border border-blue-100 bg-white/70 shadow-sm sm:min-h-[480px]">
             {heroCategory?.imageUrl ? (
               <Image
-                src={heroCategory.imageUrl}
-                alt={`${heroCategory.name} dental supplies`}
+                src="/images/hero/dental-hero-icons.png"
+                alt="Dental instruments and equipment"
                 fill
                 priority
-                className="object-cover"
+                className="object-contain p-6 sm:p-10"
                 sizes="(max-width: 1024px) 100vw, 55vw"
               />
             ) : (
@@ -158,15 +158,6 @@ export function HomePage({
               </div>
             )}
 
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/70 to-transparent px-6 pb-6 pt-20">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/75">
-                Start with confidence
-              </p>
-
-              <p className="mt-2 text-lg font-bold text-white">
-                Products that support the way you work.
-              </p>
-            </div>
           </div>
         </div>
       </section>
@@ -444,6 +435,9 @@ function mapProductToCardData(
     name: product.name,
     slug: product.slug,
     price: Number(product.price),
+    salePrice: product.salePrice == null ? null : Number(product.salePrice),
+    isOnSale: product.isOnSale,
+    hasOptions: (product.optionGroups ?? []).length > 0,
     image: primaryImage?.secureUrl,
     isAvailable: product.isAvailable,
     category: product.category
