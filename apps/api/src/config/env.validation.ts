@@ -1,7 +1,6 @@
 export function validateEnvironment(config: Record<string, unknown>) {
   const requiredVariables = [
     'DATABASE_URL',
-    'REDIS_URL',
     'IMAGEKIT_PUBLIC_KEY',
     'IMAGEKIT_PRIVATE_KEY',
     'IMAGEKIT_URL_ENDPOINT',

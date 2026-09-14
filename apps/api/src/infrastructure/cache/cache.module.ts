@@ -1,7 +1,8 @@
 import { Global, LoggerService, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { createClient } from 'redis';
+import { createClient, type RedisClientType } from 'redis';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+
 import { RedisClientLifecycle } from './redis-client.lifecycle';
 import { REDIS_CLIENT } from './redis.constants';
 import { CacheService } from './cache.service';
@@ -21,24 +22,49 @@ export function logRedisClientError(
 export async function createRedisClient(
   configService: ConfigService,
   logger: LoggerService,
-) {
+): Promise<RedisClientType | null> {
   const redisUrl = configService.get<string>('REDIS_URL');
 
   if (!redisUrl) {
-    throw new Error('REDIS_URL is not configured');
+    logger.warn(
+      '[Redis] REDIS_URL is not configured. Redis will be disabled.',
+      'Redis',
+    );
+
+    return null;
   }
 
   const client = createClient({
     url: redisUrl,
+    socket: {
+      reconnectStrategy: false,
+    },
   });
 
   client.on('error', (error) => {
     logRedisClientError(logger, error);
   });
 
-  await client.connect();
+  try {
+    await client.connect();
 
-  return client;
+    logger.log('[Redis] Connected successfully.', 'Redis');
+
+    return client;
+  } catch (error) {
+    logger.warn(
+      `[Redis] Connection failed. Redis will be disabled. ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      'Redis',
+    );
+
+    if (client.isOpen) {
+      await client.quit().catch(() => undefined);
+    }
+
+    return null;
+  }
 }
 
 @Global()

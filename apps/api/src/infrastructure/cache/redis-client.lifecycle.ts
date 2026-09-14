@@ -7,11 +7,11 @@ import { REDIS_CLIENT } from './redis.constants';
 export class RedisClientLifecycle implements OnModuleDestroy {
   constructor(
     @Inject(REDIS_CLIENT)
-    private readonly redisClient: RedisClientType,
+    private readonly redisClient: RedisClientType | null,
   ) {}
 
   async onModuleDestroy(): Promise<void> {
-    if (this.redisClient.isOpen) {
+    if (this.redisClient?.isOpen) {
       await this.redisClient.quit();
     }
   }

@@ -91,6 +91,11 @@ export class AuthService {
       return null;
     }
 
+    if (!session.user.isActive) {
+      await this.sessionsRepository.deleteSession(session.id);
+      return null;
+    }
+
     if (session.expiresAt < new Date()) {
       await this.sessionsRepository.deleteSession(session.id);
       return null;
